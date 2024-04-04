@@ -1,0 +1,104 @@
+.create-game-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #eff0f7;
+  box-shadow: 0 5px 16px rgba(8, 15, 52, 0.06);
+  border-radius: 35px;
+  min-width: 600px;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.create-game-form .line {
+  width: 100%;
+  height: 0;
+  margin: 20px auto;
+  border: 1px solid #d9dbe9;
+}
+
+.create-game-form-pages-number {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 20px 0;
+}
+
+.create-game-form-pages-number .circle-actual {
+  color: #ffffff;
+  background: #4a3aff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.create-game-form-pages-number .circle {
+  background: #eff0f7;
+  color: #6f6c90;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.create-game-form-pages-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  width: 100%;
+}
+
+.create-game-form-pages-buttons button {
+  background: #4a3aff;
+  box-shadow: 0 3px 12px rgba(74, 58, 255, 0.18);
+  border-radius: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  border: none;
+}
+
+.create-game-form-pages-buttons button:hover {
+  background: #3927fa;
+}
+
+.create-game-form-pages-buttons button:disabled {
+  background: #a4a4a4;
+  cursor: not-allowed;
+}
+
+.create-game-form-pages-buttons button .text {
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 20px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.create-game-form-pages-buttons #reset-btn {
+  background: #ff4a4a;
+  box-shadow: 0 3px 12px rgba(255, 74, 74, 0.18);
+}
+
+.create-game-form-pages-buttons #reset-btn:hover {
+  background: #fa3927;
+}
+
+@media (max-width: 768px) {
+  .create-game-form {
+    min-width: 300px;
+  }
+}

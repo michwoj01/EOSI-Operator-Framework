@@ -1,0 +1,41 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!ecsb-backend-main/src/main/**/build/
+!ecsb-backend-main/src/test/**/build/
+cache/
+postgres/
+postgres_data/
+./assets/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!ecsb-backend-main/src/main/**/bin/
+!ecsb-backend-main/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!ecsb-backend-main/src/main/**/out/
+!ecsb-backend-main/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+/assets/

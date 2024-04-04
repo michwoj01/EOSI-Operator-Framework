@@ -1,0 +1,14 @@
+[Unit]
+Description=ecsb-anal
+After=network.target
+
+[Service]
+ExecStart=java "-Dhikariconfig=/app/confs/dbconfig.conf" "-Dconfig=/app/confs/ecsb-anal.conf" -jar /app/ecsb-anal-all.jar
+Type=simple
+Restart=always
+StandardOutput=append:/app/logs/ecsb-anal.log
+StandardError=append:/app/logs/ecsb-anal-error.log
+
+
+[Install]
+WantedBy=default.target

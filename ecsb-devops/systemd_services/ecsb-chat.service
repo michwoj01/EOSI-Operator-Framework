@@ -1,0 +1,14 @@
+[Unit]
+Description=ecsb-chat
+After=network.target
+
+[Service]
+ExecStart=java -Dhikariconfig=/app/confs/dbconfig.conf" "-DrabbitHostTag=%H" "-Dconfig=/app/confs/ecsb-chat.conf" -jar /app/ecsb-chat-all.jar -Xmx2G 
+Type=simple
+Restart=always
+StandardOutput=append:/app/logs/ecsb-chat.log
+StandardError=append:/app/logs/ecsb-chat-error.log
+
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,21 @@
+.home-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  gap: 1rem;
+}
+
+.home-navbar-btn {
+  background-color: #423bc8;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.home-navbar-btn:hover {
+  background-color: #3730a3;
+}

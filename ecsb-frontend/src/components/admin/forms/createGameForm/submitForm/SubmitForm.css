@@ -1,0 +1,127 @@
+.game-submit-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.game-submit-form .titles-container {
+  width: 100%;
+}
+
+.game-submit-form .titles-container .main-title {
+  width: 100%;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 35px;
+  color: #170f49;
+}
+
+.game-submit-form .titles-container .sub-title {
+  width: 100%;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 30px;
+  color: #6f6c90;
+}
+
+.game-submit-form .summary-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.game-submit-form .summary-container h4 {
+  font-size: 1.5rem;
+}
+
+.game-submit-form .summary-container h5 {
+  font-size: 1.2rem;
+}
+
+.game-submit-form .summary-container p {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #170f49;
+}
+
+.game-submit-form .summary-class-resources-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-travels-travel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.game-submit-form .summary-files p,
+.game-submit-form .summary-class-resources p,
+.game-submit-form .summary-travels p {
+  font-weight: 400;
+  font-size: 1rem;
+  color: #6f6c90;
+}
+
+.game-submit-form .game-submit-form-input {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-submit-form .game-submit-form-input label {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #170f49;
+}
+
+.game-submit-form .game-submit-form-input input {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #6f6c90;
+}
+
+#game-submit-form-input-gamefulltime > input {
+  width: 17%;
+}
+
+.game-submit-form .submit-form-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-submit-form .submit-form-button button {
+  width: 50%;
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 20px;
+  text-align: center;
+  color: #ffffff;
+  background: #4a3aff;
+  box-shadow: 0 3px 12px rgba(74, 58, 255, 0.18);
+  border-radius: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  border: none;
+}
+
+.game-submit-form .submit-form-button button:hover {
+  background: #3927fa;
+}
+
+.game-submit-form .submit-form-button button:disabled {
+  background: #a4a4a4;
+  cursor: not-allowed;
+}

@@ -1,0 +1,101 @@
+#game-details-form {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+#game-details-form #main-title {
+  width: 100%;
+  font-size: 1.5rem;
+  font-style: normal;
+  font-weight: bold;
+  color: black;
+}
+
+#game-details-form #sub-title {
+  width: 100%;
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: normal;
+  color: #6f6c90;
+  margin-bottom: 20px;
+}
+
+#game-details-form table {
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+#game-details-form table thead th:nth-child(1) {
+  width: 12%;
+}
+
+#game-details-form table thead th:nth-child(2) {
+  width: 10%;
+}
+
+#game-details-form table thead th:nth-child(3) {
+  width: 18%;
+}
+
+#game-details-form table thead th:nth-child(4) {
+  width: 10%;
+}
+
+#game-details-form table thead th:nth-child(5) {
+  width: 10%;
+}
+
+#game-details-form table thead th:nth-child(6) {
+  width: 10%;
+}
+
+#game-details-form table thead th:nth-child(7) {
+  width: 10%;
+}
+
+#game-details-form table thead th:nth-child(8) {
+  width: 10%;
+}
+
+#game-details-form table th,
+td {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+#game-details-form table input {
+  width: 100%;
+  font-size: 1rem;
+  margin: 0;
+}
+
+#game-details-form .input-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+#game-details-form .input-container > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+#game-details-form .input-container > div > label {
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: bold;
+  color: black;
+}
+
+#game-details-form .input-container > div > input {
+  font-size: 1rem;
+  font-style: normal;
+  color: black;
+  width: auto;
+}

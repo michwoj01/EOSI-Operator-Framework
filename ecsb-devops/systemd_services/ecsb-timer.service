@@ -1,0 +1,14 @@
+[Unit]
+Description=ecsb-timer
+After=network.target
+
+[Service]
+ExecStart=java "-Dhikariconfig=/app/confs/dbconfig.conf" "-DrabbitHostTag=%H" "-Dconfig=/app/confs/ecsb-timer.conf" -jar /app/ecsb-timer-all.jar -Xms5G 
+Type=simple
+Restart=always
+StandardOutput=append:/app/logs/ecsb-timer.log
+StandardError=append:/app/logs/ecsb-timer-error.log
+
+
+[Install]
+WantedBy=default.target

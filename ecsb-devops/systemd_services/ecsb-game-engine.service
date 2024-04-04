@@ -1,0 +1,14 @@
+[Unit]
+Description=ecsb-game-engine
+After=network.target
+
+[Service]
+ExecStart=java "-Dhikariconfig=/app/confs/dbconfig.conf" "-DrabbitHostTag=%H" "-Dconfig=/app/confs/ecsb-game-engine.conf" -jar /app/ecsb-game-engine-all.jar -Xms5G 
+Type=simple
+Restart=always
+StandardOutput=append:/app/logs/ecsb-game-engine.log
+StandardError=append:/app/logs/ecsb-game-engine-error.log
+
+
+[Install]
+WantedBy=default.target

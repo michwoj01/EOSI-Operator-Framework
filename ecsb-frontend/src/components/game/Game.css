@@ -1,0 +1,30 @@
+.no-game-container {
+  height: 100vh;
+}
+
+.no-game-container h1 {
+  text-align: center;
+}
+
+.no-game-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.no-game-btn-container button {
+  padding: 10px;
+  background-color: #423bc8;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin-top: 1rem;
+  cursor: pointer;
+  font-size: 2rem;
+}
+
+.no-game-btn-container button:hover {
+  background-color: #3730a3;
+  cursor: pointer;
+}

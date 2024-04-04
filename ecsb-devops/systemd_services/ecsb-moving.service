@@ -1,0 +1,14 @@
+[Unit]
+Description=ecsb-moving
+After=network.target
+
+[Service]
+ExecStart=java "-Dhikariconfig=/app/confs/dbconfig.conf" "-DrabbitHostTag=%H" "-Dconfig=/app/confs/ecsb-moving.conf" -jar /app/ecsb-moving-all.jar -Xms1G 
+Type=simple
+Restart=always
+StandardOutput=append:/app/logs/ecsb-moving.log
+StandardError=append:/app/logs/ecsb-moving-error.log
+
+
+[Install]
+WantedBy=default.target

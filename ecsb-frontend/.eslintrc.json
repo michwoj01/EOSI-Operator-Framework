@@ -1,0 +1,66 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react-hooks/recommended",
+        "standard-with-typescript",
+        "plugin:react/jsx-runtime",
+        "react-app",
+        "prettier"
+    ],
+    "overrides": [
+      {
+        "files": ["*.ts"],
+        "rules": {
+          "@typescript-eslint/explicit-function-return-type": "error"
+        }
+      }
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "project": ["./tsconfig.json"]
+    },
+    "ignorePatterns": ["src/assets/cloud_city.json"],
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    },
+    "plugins": [
+        "react",
+        "react-hooks",
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "react/react-in-jsx-scope": "off",
+        "react/no-children-prop": "off",
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "error",
+        "react/jsx-filename-extension": [ "error", {"extensions": [".tsx"]} ],
+        "react/prop-types": "off",
+        "@typescript-eslint/no-unused-vars": "error",
+        "@typescript-eslint/no-floating-promises": "warn",
+        "@typescript-eslint/strict-boolean-expressions": "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/no-empty-interface": "off",
+        "@typescript-eslint/promise-function-async": "off",
+        "@typescript-eslint/no-misused-promises": "off",
+        "@typescript-eslint/consistent-indexed-object-style": "off", 
+        "@typescript-eslint/no-dynamic-delete": "off",
+        "@typescript-eslint/restrict-template-expressions": "off",
+        "@typescript-eslint/prefer-optional-chain": "off",
+        "@typescript-eslint/array-type": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "object-shorthand": "off",
+        "@typescript-eslint/restrict-plus-operands": "off",
+        "@typescript-eslint/lines-between-class-members": "off"
+    }
+}
