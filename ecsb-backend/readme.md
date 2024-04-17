@@ -17,6 +17,8 @@ To start all containers run:
 
 - `docker-compose up`
 
+To build jars for deployment use buildFatJar task
+
 ## Application architecture
 App consists of several modules that use a database, redis and communicate with each other through RabbitMQ.
 

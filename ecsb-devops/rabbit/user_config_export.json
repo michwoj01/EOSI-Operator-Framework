@@ -1,0 +1,20 @@
+{"rabbit_version":"3.12.0","rabbitmq_version":"3.12.0","product_name":"RabbitMQ","product_version":"3.12.0","users":[
+  {"name":"ecsb-anal","password_hash":"x4Bs6jrU8PCjhHJELrCgdLuX3zdwYuqEB82SY81F/gNduR3B","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"ecsb-moving","password_hash":"KbwXWhcW8YJWbTOwbhCrpHhx4MVk+Vv284d7WjQ84bF2QAez","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"ecsb-chat","password_hash":"rYK0h6H3e+R8Xix1ebu877cR3VHJPKHsaPvREkYrOuoQjtE0","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"ecsb-game-init","password_hash":"g9FiYA1S2MfMncTpHUtdu+5ymjSvpFzoLqyqOiU98stXt4v6","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"ecsb-game-engine","password_hash":"oeoAO/N0BAn3abH8S+FORj/j7k3bUOPZ3pYkgZek4o4RaBME","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"ecsb-timer","password_hash":"4w0NtoLrjHyzWAkJgVRlbnE7Um4WLuaaGpmhwzEwCR9Plxbq","hashing_algorithm":"rabbit_password_hashing_sha256","tags":[],"limits":{}},
+  {"name":"guest","password_hash":"kp7TRZMzRB5TUPCel5+KadnUT0rThjPbINBHIrZ+LhnvDZ5M","hashing_algorithm":"rabbit_password_hashing_sha256","tags":["administrator"],"limits":{}}],
+  "vhosts":[{"name":"/"}],"permissions":[
+  {"user":"ecsb-game-init","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"ecsb-anal","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"ecsb-chat","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"ecsb-timer","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"guest","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"ecsb-game-engine","vhost":"/","configure":".*","write":".*","read":".*"},
+  {"user":"ecsb-moving","vhost":"/","configure":".*","write":".*","read":".*"}],
+  "topic_permissions":[],"parameters":[],"global_parameters":[
+  {"name":"internal_cluster_id","value":"rabbitmq-cluster-id-LMkTrqTolIENoyz2AjvZMA"}],"policies":[],"queues":[],
+  "exchanges":[],
+  "bindings":[]}
