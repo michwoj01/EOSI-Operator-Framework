@@ -15,16 +15,16 @@ services:
       - ./dbscripts/:/docker-entrypoint-initdb.d/
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
     ports:
       - '15672:15672'
       - '5672:5672'
   redis:
     container_name: redis
-    image: redis:6.2-alpine
+    image: redis/redis-stack
     restart: on-failure
     ports:
+      - '8001:8001'
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning
-    # volumes:
-    #   - ./cache:/redis_data
+    volumes:
+      - ./cache:/redis_data

@@ -8,8 +8,7 @@ import pl.edu.agh.utils.HttpConfig
 
 data class MovingConfig(
     val httpConfig: HttpConfig,
-    val redis: RedisConfig,
-    val jwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
+    val redisConfig: RedisConfig,
     val gameToken: JWTConfig<Token.GAME_TOKEN>,
     val rabbitConfig: RabbitConfig
 )

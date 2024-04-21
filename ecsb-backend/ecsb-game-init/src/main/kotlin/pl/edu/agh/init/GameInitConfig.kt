@@ -12,7 +12,7 @@ data class GameInitConfig(
     val httpConfig: HttpConfig,
     val jwt: JWTConfig<Token.LOGIN_USER_TOKEN>,
     val gameToken: JWTConfig<Token.GAME_TOKEN>,
-    val redis: RedisConfig,
+    val redisConfig: RedisConfig,
     val savedAssets: SavedAssetsConfig,
     val defaultAssets: GameAssets,
     val rabbitConfig: RabbitConfig
