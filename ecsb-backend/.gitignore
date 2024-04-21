@@ -6,6 +6,7 @@ build/
 cache/
 postgres/
 postgres_data/
+postgres15_data/
 ./assets/
 
 ### STS ###

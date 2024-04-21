@@ -1,5 +1,4 @@
 version: '3.5'
-
 services:
   postgres:
     container_name: postgres
@@ -23,9 +22,9 @@ services:
   redis:
     container_name: redis
     image: redis:6.2-alpine
-    restart: always
+    restart: on-failure
     ports:
       - '6379:6379'
     command: redis-server --save 20 1 --loglevel warning
-    volumes:
-      - ./cache:/redis_data
+    # volumes:
+    #   - ./cache:/redis_data
