@@ -17,10 +17,22 @@ To start all containers run:
 
 - `docker-compose up`
 
-To build jars for deployment use buildFatJar task
+### RabbitMQ
+
+Configuration could be found under /etc/rabbitmq - you can use properties defined in rabbitmq.conf.
+Management (15672) and sharding plugins are enabled. User and vhost definitions are stored inside user_config_export.json.
+To import them into rabbit, visit http://localhost:15672/cli/index.html and download rabbitmqadmin script and then:
+
+    sudo chown 700 rabbitmqadmin
+    sudo chmod 777 rabbitmqadmin
+    sudo mv /home/ubuntu/rabbitmqadmin /usr/bin
+    sudo rabbitmqadmin import user_config_export.json
+
 
 ## Application architecture
 App consists of several modules that use a database, redis and communicate with each other through RabbitMQ.
+
+To build jars for deployment use buildFatJar task.
 
 ### ecsb-game-init
 

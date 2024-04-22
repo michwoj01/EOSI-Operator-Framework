@@ -6,10 +6,8 @@ services:
     restart: on-failure
     env_file:
       - 'docker.env'
-    environment:
-      PORT: 5432
     ports:
-      - 5432:5432
+      - '5432:5432'
     volumes:
       - ./postgres15_data:/var/lib/postgresql/data
       - ./dbscripts/:/docker-entrypoint-initdb.d/
@@ -19,6 +17,9 @@ services:
     ports:
       - '15672:15672'
       - '5672:5672'
+    volumes:
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf #add configuration
+      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins #add plugins
   redis:
     container_name: redis
     image: redis/redis-stack
