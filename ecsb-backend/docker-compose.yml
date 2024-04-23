@@ -11,6 +11,7 @@ services:
     volumes:
       - ./postgres15_data:/var/lib/postgresql/data
       - ./dbscripts/:/docker-entrypoint-initdb.d/
+  
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3.12-management
@@ -18,8 +19,9 @@ services:
       - '15672:15672'
       - '5672:5672'
     volumes:
-      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf #add configuration
-      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins #add plugins
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # add configuration
+      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins # add plugins
+  
   redis:
     container_name: redis
     image: redis/redis-stack
@@ -29,3 +31,60 @@ services:
       - '6379:6379'
     volumes:
       - ./cache:/redis_data
+  
+  game-init:
+    container_name: game-init
+    build:
+      context: .
+      dockerfile: ./ecsb-game-init/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: on-failure
+  
+  moving:
+    container_name: moving
+    build:
+      context: .
+      dockerfile: ./ecsb-moving/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: on-failure
+
+  chat:
+    container_name: chat
+    build:
+      context: .
+      dockerfile: ./ecsb-chat/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: on-failure
+
+  game-engine:
+    container_name: game-engine
+    build:
+      context: .
+      dockerfile: ./ecsb-game-engine/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - chat
+    restart: on-failure
+
+  timer:
+    container_name: timer
+    build:
+      context: .
+      dockerfile: ./ecsb-timer/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - chat
+    restart: on-failure
