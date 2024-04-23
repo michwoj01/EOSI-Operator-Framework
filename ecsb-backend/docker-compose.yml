@@ -42,6 +42,8 @@ services:
       - redis
       - rabbitmq
     restart: on-failure
+    ports:
+      - '2136:2136'
   
   moving:
     container_name: moving
@@ -53,6 +55,8 @@ services:
       - redis
       - rabbitmq
     restart: on-failure
+    ports:
+      - '8085:8085'
 
   chat:
     container_name: chat
@@ -64,6 +68,8 @@ services:
       - redis
       - rabbitmq
     restart: on-failure
+    ports:
+      - '2138:2138'
 
   game-engine:
     container_name: game-engine
