@@ -5,13 +5,13 @@ services:
     image: postgres:15.3
     restart: on-failure
     env_file:
-      - 'docker.env'
+      - 'ecsb-backend/docker.env'
     ports:
       - '5432:5432'
     volumes:
       - ./postgres15_data:/var/lib/postgresql/data
-      - ./dbscripts/:/docker-entrypoint-initdb.d/
-  
+      - ./ecsb-backend/dbscripts/:/docker-entrypoint-initdb.d/
+
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3.12-management
@@ -19,9 +19,9 @@ services:
       - '15672:15672'
       - '5672:5672'
     volumes:
-      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # add configuration
-      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins # add plugins
-  
+      - ./ecsb-backend/rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # add configuration
+      - ./ecsb-backend/rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins # add plugins
+
   redis:
     container_name: redis
     image: redis/redis-stack
@@ -31,11 +31,11 @@ services:
       - '6379:6379'
     volumes:
       - ./cache:/redis_data
-  
+
   game-init:
     container_name: game-init
     build:
-      context: .
+      context: ecsb-backend
       dockerfile: ./ecsb-game-init/Dockerfile
     depends_on:
       - postgres
@@ -44,11 +44,11 @@ services:
     restart: on-failure
     ports:
       - '2136:2136'
-  
+
   moving:
     container_name: moving
     build:
-      context: .
+      context: ecsb-backend
       dockerfile: ./ecsb-moving/Dockerfile
     depends_on:
       - postgres
@@ -61,7 +61,7 @@ services:
   chat:
     container_name: chat
     build:
-      context: .
+      context: ecsb-backend
       dockerfile: ./ecsb-chat/Dockerfile
     depends_on:
       - postgres
@@ -74,7 +74,7 @@ services:
   game-engine:
     container_name: game-engine
     build:
-      context: .
+      context: ecsb-backend
       dockerfile: ./ecsb-game-engine/Dockerfile
     depends_on:
       - postgres
@@ -86,7 +86,7 @@ services:
   timer:
     container_name: timer
     build:
-      context: .
+      context: ecsb-backend
       dockerfile: ./ecsb-timer/Dockerfile
     depends_on:
       - postgres
@@ -94,3 +94,20 @@ services:
       - rabbitmq
       - chat
     restart: on-failure
+
+  webapp:
+    container_name: webapp
+    build:
+      context: ecsb-frontend
+      dockerfile: ./Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - chat
+      - moving
+      - game-engine
+      - game-init
+      - timer
+    ports:
+      - '5173:5173'
