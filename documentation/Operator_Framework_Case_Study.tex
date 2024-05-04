@@ -126,7 +126,7 @@ Kubernetes to niekwestionowany lider w segmencie automatyzacji i orkiestracji ap
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=1\linewidth]{documentation/resources/stateful_apps.png}
+    \includegraphics[width=1\linewidth]{resources/stateful_apps.png}
     \caption{Przykładowe aplikacje typu stateful}
     \label{fig:stateful}
 \end{figure}
@@ -161,7 +161,7 @@ Aplikacją, na której pokażemy działanie Operatora, będzie Elektroniczna Ch�
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=1\linewidth]{documentation/resources/game_1.png}
+    \includegraphics[width=1\linewidth]{resources/game_1.png}
     \caption{Ekran powitalny ECSB}
     \label{fig:stateful}
 \end{figure}
@@ -170,7 +170,7 @@ eCSB jest aplikacją webową opartą o mikroserwisy oraz komunikację z wykorzys
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.8\linewidth]{documentation/resources/ecsb-schema.png}
+    \includegraphics[width=0.8\linewidth]{resources/ecsb-schema.png}
     \caption{Architektura projektu eCSB}
     \label{fig:schema}
 \end{figure}
@@ -183,7 +183,7 @@ Warto dodać, że niektóre z modułów zostały zaprojektowane z myślą o skal
 Naszym scenariuszem, poprzez który zademonstrujemy działanie Operatora dla aplikacji eCSB, będą następujące operacje:
 
 \begin{enumerate}
-    \item uruchomienie klastra Kubernetesowego z minimalnym wariantem eCSB (6 modułów)
+    \item uruchomienie klastra Kubernetesowego z minimalnym wariantem eCSB (5 modułów - pomijamy moduł ecsb-anal, który służył jedynie do zbierania danych analitycznych)
     \item potrojenie skalowalnych modułów (moving, chat, game-engine), a następnie powrót do wariantu minimalnego
     \item przywrócenie centralnego modułu po awarii (timer lub game-init)
 \end{enumerate}
@@ -193,9 +193,49 @@ Naszym scenariuszem, poprzez który zademonstrujemy działanie Operatora dla apl
 \chapter{\ChapterTitleSolutionArchitecture}
 \label{sec:architektura}
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.9\linewidth]{resources/architecture_diagram.png}
+    \caption{Diagram architektury rozwiązania z wykorzystaniem Kubernetesa}
+    \label{fig:schema}
+\end{figure}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleEnvConfig}
 \label{sec:konfiguracja-srodowiska}
+
+Jako punkt wyjścia konfiguracji naszego projektu wyznaczyliśmy zmodyfikowany plik docker-compose.yml, za pomocą którego uruchamiane było middleware dla aplikacji backendowych oraz aplikacja webowa. Rozszerzyliśmy go o backendowe mikroserwisy i dodaliśmy wstępną konfigurację dla PostgreSQL oraz RabbitMQ: 
+\\
+\begin{lstlisting}[caption=Przykład pliku Dockerfile dla mikroserwisu]
+FROM gradle:7-jdk11 AS build
+COPY .. /home/gradle/ecsb-backend
+WORKDIR /home/gradle/ecsb-backend
+RUN gradle :ecsb-game-engine:buildFatJar --no-daemon
+
+FROM openjdk:11
+WORKDIR /home/gradle/ecsb-backend
+RUN mkdir /app
+COPY --from=build 
+/home/gradle/ecsb-backend/ecsb-game-engine/build/libs/*.jar 
+/app/ecsb-game-engine.jar
+ENTRYPOINT ["java", "-jar", "/app/ecsb-game-engine.jar"]
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Przykładowa definicja kontenera mikroserwisu w pliku docker-compose.yml]
+game-engine:
+    container_name: game-engine
+    build:
+      context: ecsb-backend
+      dockerfile: ./ecsb-game-engine/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - chat
+    restart: on-failure
+\end{lstlisting}
+
+Mając z grubsza zdefiniowane kontenery składające się na architekturę, następnym krokiem było opakowanie ich w Kubernetesowe serwisy oraz konfiguracja zmiennych środowiskowych.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleInstallMethod}
