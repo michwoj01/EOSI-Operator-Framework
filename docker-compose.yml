@@ -33,7 +33,7 @@ services:
 
   game-init:
     container_name: game-init
-    image: game-init
+    image: michwoj01/ecsb:game-init
     build:
       context: ecsb-backend
       dockerfile: ./ecsb-game-init/Dockerfile
@@ -47,7 +47,7 @@ services:
 
   moving:
     container_name: moving
-    image: moving
+    image: michwoj01/ecsb:moving
     build:
       context: ecsb-backend
       dockerfile: ./ecsb-moving/Dockerfile
@@ -61,7 +61,7 @@ services:
 
   chat:
     container_name: chat
-    image: chat
+    image: michwoj01/ecsb:chat
     build:
       context: ecsb-backend
       dockerfile: ./ecsb-chat/Dockerfile
@@ -75,7 +75,7 @@ services:
 
   game-engine:
     container_name: game-engine
-    image: game-engine
+    image: michwoj01/ecsb:game-engine
     build:
       context: ecsb-backend
       dockerfile: ./ecsb-game-engine/Dockerfile
@@ -88,7 +88,7 @@ services:
 
   timer:
     container_name: timer
-    image: timer
+    image: michwoj01/ecsb:timer
     build:
       context: ecsb-backend
       dockerfile: ./ecsb-timer/Dockerfile
@@ -101,7 +101,7 @@ services:
 
   webapp:
     container_name: webapp
-    image: webapp
+    image: michwoj01/ecsb:webapp
     build:
       context: ecsb-frontend
       dockerfile: ./Dockerfile
