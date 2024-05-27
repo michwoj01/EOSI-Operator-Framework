@@ -16,8 +16,7 @@ spec:
         app.kubernetes.io/name: webapp
     spec:
       containers:
-        - image: webapp
-          imagePullPolicy: Never
+        - image: michwoj01/ecsb:webapp
           name: webapp
           ports:
             - containerPort: 5173

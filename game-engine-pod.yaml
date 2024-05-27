@@ -4,8 +4,7 @@ metadata:
   name: game-engine
 spec:
   containers:
-    - image: game-engine
-      imagePullPolicy: Never
+    - image: michwoj01/ecsb:game-engine
       name: game-engine
       resources: {}
   restartPolicy: OnFailure

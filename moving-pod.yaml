@@ -6,8 +6,7 @@ metadata:
     app.kubernetes.io/name: moving
 spec:
   containers:
-    - image: moving
-      imagePullPolicy: Never
+    - image: michwoj01/ecsb:moving
       name: moving
       ports:
         - containerPort: 8085

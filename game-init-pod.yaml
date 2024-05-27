@@ -6,8 +6,7 @@ metadata:
     app.kubernetes.io/name: game-init
 spec:
   containers:
-    - image: game-init
-      imagePullPolicy: Never
+    - image: michwoj01/ecsb:game-init
       name: game-init
       ports:
         - containerPort: 2136

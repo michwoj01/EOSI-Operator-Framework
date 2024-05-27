@@ -4,8 +4,7 @@ metadata:
   name: timer
 spec:
   containers:
-    - image: timer
-      imagePullPolicy: Never
+    - image: michwoj01/ecsb:timer
       name: timer
       resources: {}
   restartPolicy: OnFailure

@@ -13,6 +13,7 @@ spec:
         - containerPort: 6379
       resources: {}
       volumeMounts:
+        # TODO: move to persistent storage (?)
         - mountPath: /redis_data
           name: redis-claim0
   restartPolicy: OnFailure

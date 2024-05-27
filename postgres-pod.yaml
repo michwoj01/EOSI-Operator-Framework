@@ -21,9 +21,10 @@ spec:
         - containerPort: 5432
       resources: {}
       volumeMounts:
-        # TODO: move these to dockerfile
+        # TODO: move to persistent storage 
         - mountPath: /var/lib/postgresql/data
           name: postgres-claim0
+        # TODO: move to dockerfile 
         - mountPath: /docker-entrypoint-initdb.d/
           name: postgres-claim1
   restartPolicy: OnFailure
