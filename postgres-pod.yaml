@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  containers:
+    - env:
+        - name: POSTGRES_DB
+          value: "mydb"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          value: "postgres"
+      image: postgres:15.3
+      name: postgres
+      ports:
+        - containerPort: 5432
+      resources: {}
+      volumeMounts:
+        # TODO: move these to dockerfile
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-claim0
+        - mountPath: /docker-entrypoint-initdb.d/
+          name: postgres-claim1
+  restartPolicy: OnFailure
+  volumes:
+    - name: postgres-claim0
+      persistentVolumeClaim:
+        claimName: postgres-claim0
+    - name: postgres-claim1
+      persistentVolumeClaim:
+        claimName: postgres-claim1
+status: {}

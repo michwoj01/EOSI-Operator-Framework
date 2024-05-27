@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: game-init
+  labels:
+    app.kubernetes.io/name: game-init
+spec:
+  containers:
+    - image: game-init
+      imagePullPolicy: Never
+      name: game-init
+      ports:
+        - containerPort: 2136
+      resources: {}
+  restartPolicy: OnFailure
+status: {}

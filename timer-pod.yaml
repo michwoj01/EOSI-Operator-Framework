@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: timer
+spec:
+  containers:
+    - image: timer
+      imagePullPolicy: Never
+      name: timer
+      resources: {}
+  restartPolicy: OnFailure
+status: {}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: moving
+  labels:
+    app.kubernetes.io/name: moving
+spec:
+  containers:
+    - image: moving
+      imagePullPolicy: Never
+      name: moving
+      ports:
+        - containerPort: 8085
+      resources: {}
+  restartPolicy: OnFailure
+status: {}

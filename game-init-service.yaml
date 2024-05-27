@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-init
+spec:
+  ports:
+    - name: "2136"
+      port: 2136
+      targetPort: 2136
+  selector:
+    app.kubernetes.io/name: game-init
+status:
+  loadBalancer: {}

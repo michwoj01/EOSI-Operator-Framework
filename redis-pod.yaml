@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  containers:
+    - image: redis/redis-stack
+      name: redis
+      ports:
+        - containerPort: 8001
+        - containerPort: 6379
+      resources: {}
+      volumeMounts:
+        - mountPath: /redis_data
+          name: redis-claim0
+  restartPolicy: OnFailure
+  volumes:
+    - name: redis-claim0
+      persistentVolumeClaim:
+        claimName: redis-claim0
+status: {}

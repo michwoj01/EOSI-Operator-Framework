@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: game-engine
+spec:
+  containers:
+    - image: game-engine
+      imagePullPolicy: Never
+      name: game-engine
+      resources: {}
+  restartPolicy: OnFailure
+status: {}
