@@ -1,1 +1,15 @@
 node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.vscode
+*.md
+*.log
+.env
+.eslintrc.json
+.prettierrc
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
