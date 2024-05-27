@@ -5,4 +5,6 @@ eCSB case study of Operator Framework in Kubernetes. Repository consists of few 
 * ecsb-backend - microservices (Kotlin)
 * ecsb-devops - deployment configuration (nginx, RabbitMQ, Docker, module configs)
 * documentation - LateX document binded with project on Overleaf
+* deployments, services, volumes - Kubernetes playbooks
+
 
