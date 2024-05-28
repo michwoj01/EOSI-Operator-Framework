@@ -201,11 +201,11 @@ Naszym scenariuszem, poprzez który zademonstrujemy działanie Operatora dla apl
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\ChapterTitleEnvConfig}
+\chapter{Konfiguracja środowiska}
 \label{sec:konfiguracja-srodowiska}
 
-Jako punkt wyjścia konfiguracji naszego projektu wyznaczyliśmy zmodyfikowany plik docker-compose.yml, za pomocą którego uruchamiane było middleware dla aplikacji backendowych oraz aplikacja webowa. Rozszerzyliśmy go o backendowe mikroserwisy i dodaliśmy wstępną konfigurację dla PostgreSQL oraz RabbitMQ: 
-\\
+Jako punkt wyjścia konfiguracji projektu został wyznaczony zmodyfikowany plik \texttt{docker-compose.yml}, za pomocą którego uruchamiane było middleware dla aplikacji backendowych oraz aplikacja webowa. Plik ten został rozszerzony o backendowe mikroserwisy oraz dodano wstępną konfigurację dla PostgreSQL oraz RabbitMQ:
+
 \begin{lstlisting}[caption=Przykład pliku Dockerfile dla mikroserwisu]
 FROM gradle:7-jdk11 AS build
 COPY .. /home/gradle/ecsb-backend
@@ -215,9 +215,7 @@ RUN gradle :ecsb-game-engine:buildFatJar --no-daemon
 FROM openjdk:11
 WORKDIR /home/gradle/ecsb-backend
 RUN mkdir /app
-COPY --from=build 
-/home/gradle/ecsb-backend/ecsb-game-engine/build/libs/*.jar 
-/app/ecsb-game-engine.jar
+COPY --from=build /home/gradle/ecsb-backend/ecsb-game-engine/build/libs/*.jar /app/ecsb-game-engine.jar
 ENTRYPOINT ["java", "-jar", "/app/ecsb-game-engine.jar"]
 \end{lstlisting}
 
@@ -237,14 +235,220 @@ game-engine:
 
 Mając z grubsza zdefiniowane kontenery składające się na architekturę, następnym krokiem było opakowanie ich w Kubernetesowe serwisy oraz konfiguracja zmiennych środowiskowych.
 
+\section{Konfiguracja w Kubernetes}
+
+W celu przeniesienia konfiguracji do Kubernetes, należy stworzyć odpowiednie pliki YAML definiujące zasoby takie jak ConfigMap, Pod, Deployment, Service oraz PersistentVolumeClaim. Przykładowe pliki konfiguracyjne:
+
+\subsection{ConfigMap dla RabbitMQ}
+
+\begin{lstlisting}[caption=ConfigMap dla RabbitMQ]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq
+data:
+  enabled-plugins: "[rabbitmq_management,rabbitmq_sharding]."
+  rabbitmq-conf: |
+    vm_memory_high_watermark.relative = 0.4
+    vm_memory_calculation_strategy = rss
+\end{lstlisting}
+
+\subsection{Pod dla mikroserwisu}
+
+\begin{lstlisting}[caption=Pod dla mikroserwisu]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chat
+  labels:
+    app.kubernetes.io/name: chat
+spec:
+  containers:
+    - image: michwoj01/ecsb:chat
+      name: chat
+      ports:
+        - containerPort: 2138
+      resources: {}
+  restartPolicy: OnFailure
+status: {}
+\end{lstlisting}
+
+\subsection{Deployment dla RabbitMQ}
+
+\begin{lstlisting}[caption=Deployment dla RabbitMQ]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  labels:
+    app.kubernetes.io/name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq
+  strategy:
+    type: Recreate
+  template:
+    metadata: 
+      labels:
+        app.kubernetes.io/name: rabbitmq
+    spec:
+      containers:
+        - image: rabbitmq:3.12-management
+          name: rabbitmq
+          ports:
+            - containerPort: 15672
+            - containerPort: 5672
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/rabbitmq/
+              name: rabbitmq
+      restartPolicy: Always
+      volumes:
+        - name: rabbitmq
+          configMap:
+            name: rabbitmq
+            items:
+            - key: rabbitmq-conf
+              path: rabbitmq.conf
+            - key: enabled-plugins
+              path: enabled_plugins
+status: {}
+\end{lstlisting}
+
+\subsection{Service dla PostgreSQL}
+
+\begin{lstlisting}[caption=Service dla PostgreSQL]
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: postgres
+status:
+  loadBalancer: {}
+\end{lstlisting}
+
+\subsection{PersistentVolumeClaim dla PostgreSQL}
+
+\begin{lstlisting}[caption=PersistentVolumeClaim dla PostgreSQL]
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+\end{lstlisting}
+
+Konfiguracja w Kubernetes pozwala na zarządzanie mikroserwisami w bardziej skalowalny i elastyczny sposób, umożliwiając dynamiczne skalowanie, zarządzanie stanem aplikacji oraz łatwiejszą integrację z innymi komponentami systemu. Wszystkie pliki konfiguracyjne YAML powinny być umieszczone w odpowiednim katalogu (np. \texttt{kubernetes}), aby można było łatwo zastosować je w klastrze Kubernetes.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleInstallMethod}
 \label{sec:instalacja}
 
+\section{Instalacja niezbędnych narzędzi}
+
+\begin{enumerate}
+  \item \textbf{Instalacja Docker}:
+  \begin{enumerate}
+    \item Należy przejść na stronę \href{https://www.docker.com/products/docker-desktop}{Docker Desktop} i pobrać odpowiednią wersję dla systemu operacyjnego (Windows, macOS, Linux).
+    \item Następnie należy postępować zgodnie z opisanymi krokami instalacji dla używanego systemu operacyjnego.
+  \end{enumerate}
+  \item \textbf{Instalacja Minikube}:
+  \begin{enumerate}
+    \item Należy przejść na stronę \href{https://minikube.sigs.k8s.io/docs/start/}{Minikube} i pobrać odpowiednią wersję dla systemu operacyjnego, a następnie postępować zgodnie z krokami instalacji opisanymi w na załączonej stronie internetowej.
+    \item Uruchomienie Minikube:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube start\end{lstlisting}
+  \end{enumerate}
+\end{enumerate}
+
+\section{Uruchomienie aplikacji na Kubernetes}
+
+\begin{enumerate}
+  \item \textbf{Zastosowanie wszystkich plików konfiguracyjnych Kubernetes}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- apply -f kubernetes -R\end{lstlisting}
+  Jeżeli napotkano błąd \texttt{error looking up service account default/default: serviceaccount "default" not found}, ponowne uruchomienie powyższej komendy.
+
+  \item \textbf{Sprawdzenie statusu}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- get pods\end{lstlisting}
+\end{enumerate}
+
+\section{Debugowanie}
+
+W przypadku problemów, sprawdzenie logów podów:
+\begin{quote}
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- logs <pod-name>
+\end{lstlisting}
+\end{quote}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleSolutionSteps}
 \label{sec:odtworzenie}
+
+W tym rozdziale opisany jest proces odtworzenia całego rozwiązania krok po kroku, z wykorzystaniem podejścia Infrastructure as Code (IaC). Podejście to znacząco ułatwia proces wdrażania infrastruktury, poprzez jego automatyzację i ogranicza się do wykonania kilku komend, które, na podstawie zdefiniowanych plików konfiguracyjnych, wykonają niezbędną pracę za nas.
+
+\section{Infrastructure as Code (IaC) - Podejście}
+
+Infrastructure as Code (IaC) to praktyka zarządzania infrastrukturą IT przy użyciu kodu, co pozwala na automatyzację procesów wdrożeniowych oraz łatwe zarządzanie środowiskiem. W naszym projekcie wykorzystujemy Kubernetes do zarządzania kontenerami oraz Docker do budowy obrazów kontenerów.
+
+\section{Kroki odtworzenia rozwiązania}
+
+\begin{enumerate}
+    \item \textbf{Instalacja narzędzi}:
+    Na wstępie należy zainstalować niezbędne narzędzia, takie jak Docker, Minikube oraz kubectl zgodnie z instrukcjami podanymi w rozdziale dotyczącym instalacji.
+
+    \item \textbf{Klonowanie repozytorium projektu}:
+    Aby rozpocząć pracę, należy sklonować repozytorium projektu zawierające wszystkie niezbędne pliki konfiguracyjne i kody źródłowe:
+
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+git clone https://github.com/michwoj01/EOSI-Operator-Framework.git
+cd EOSI-Operator-Framework\end{lstlisting}
+
+    \item \textbf{Budowanie obrazów z wykorzystaniem Dockera}:
+    Następnie, należy zbudować obrazy Docker dla wszystkich mikroserwisów zgodnie z konfiguracją zawartą w docker-compose.yml.
+
+    \item \textbf{Zastosowanie konfiguracji Kubernetesa}:
+    Wszystkie pliki konfiguracyjne Kubernetes znajdują się w katalogu \texttt{kubernetes}. Aby zastosować te konfiguracje, używamy komendy:
+
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- apply -f kubernetes -R\end{lstlisting}
+
+    \item \textbf{Konfiguracja RabbitMQ i PostgreSQL}:
+    RabbitMQ jest konfigurowany przy użyciu ConfigMap, a PostgreSQL przy użyciu PersistentVolumeClaim, aby zapewnić trwałe przechowywanie danych. Szczegóły konfiguracji znajdują się w odpowiednich plikach YAML.
+
+    \item \textbf{Tworzenie podów i usług}:
+    Konfiguracja podów i usług dla wszystkich komponentów aplikacji (mikroserwisów, baz danych, kolejek) jest zdefiniowana w plikach YAML. Każdy plik definiuje specyfikację dla odpowiedniego komponentu, w tym zmienne środowiskowe, porty i zależności.
+
+    \item \textbf{Sprawdzenie stanu klastra}:
+    Po zastosowaniu konfiguracji, należy sprawdzić status uruchomionych podów, aby upewnić się, że wszystkie komponenty zostały poprawnie wdrożone:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- get pods\end{lstlisting}
+
+    \item \textbf{Debugowanie}:
+    W przypadku problemów, logi podów mogą dostarczyć niezbędnych informacji do diagnozowania i rozwiązywania problemów:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube kubectl -- logs <pod-name>\end{lstlisting}
+
+    \item \textbf{Dostęp do aplikacji}:
+    Po poprawnym uruchomieniu wszystkich usług, aplikacja powinna być dostępna. Minikube dostarcza polecenie, które pozwala na dostęp do usług zewnętrznych poprzez otwarcie odpowiednich portów:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube service <service-name>\end{lstlisting}
+\end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleDemoDeployment}
