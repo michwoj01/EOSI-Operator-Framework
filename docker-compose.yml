@@ -116,3 +116,5 @@ services:
       - timer
     ports:
       - '5173:5173'
+    env_file:
+      - ecsb-frontend/.env
