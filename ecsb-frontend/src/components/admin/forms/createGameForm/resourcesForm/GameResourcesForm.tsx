@@ -1,4 +1,5 @@
-import { type CreateGameFormData } from '../CreateGameForm'
+import React from 'react';
+import {type CreateGameFormData} from '../CreateGameForm'
 import './GameResourcesForm.css'
 
 interface GameResourcesFormProps {

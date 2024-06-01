@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { type AssetConfigResponse } from '../../../../apis/game/Types'
+import React, {useState} from 'react';
+import {type AssetConfigResponse} from '../../../../apis/game/Types'
 import GameResourcesForm from './resourcesForm/GameResourcesForm'
 import GameTravelsForm from './travelsForm/GameTravelsForm'
 import ModifyTravel from './travelsForm/modifyTravel/ModifyTravel'

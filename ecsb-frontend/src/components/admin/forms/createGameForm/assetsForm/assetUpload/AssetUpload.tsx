@@ -1,6 +1,6 @@
-import { type FC } from 'react'
-import { v4 as uuidv4 } from 'uuid'
-import { type CreateGameFormData } from '../../CreateGameForm'
+import React, {type FC} from 'react';
+import {v4 as uuidv4} from 'uuid'
+import {type CreateGameFormData} from '../../CreateGameForm'
 import './AssetUpload.css'
 
 interface AssetUploadProps {

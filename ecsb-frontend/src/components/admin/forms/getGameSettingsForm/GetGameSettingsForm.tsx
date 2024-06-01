@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import React, {useRef, useState} from 'react';
 import gameService from '../../../../services/game/GameService'
-import type { GameSettings } from '../../../../services/game/Types'
+import type {GameSettings} from '../../../../services/game/Types'
 import './GetGameSettingsForm.css'
 import Settings from './settings/Settings'
 import LoadingSpinner from '../../../common/spinner/LoadingSpinner'

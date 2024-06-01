@@ -1,8 +1,9 @@
-import { type GameSettings } from '../../../../../services/game/Types'
+import React from 'react';
+import {type GameSettings} from '../../../../../services/game/Types'
 import {
-  type ClassResourceRepresentation,
-  type GameAssets,
-  type GameSettingsTravels,
+    type ClassResourceRepresentation,
+    type GameAssets,
+    type GameSettingsTravels,
 } from '../../../../../apis/game/Types'
 import './Settings.css'
 

@@ -1,7 +1,8 @@
-import type { ReactElement } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
-import { decodeGameToken, getGameToken } from '../../apis/apis'
-import { isNumber, isTokenExpired } from '../../utils/utils'
+import type {ReactElement} from 'react'
+import React from 'react';
+import {Navigate, useParams} from 'react-router-dom'
+import {decodeGameToken, getGameToken} from '../../apis/apis'
+import {isNumber, isTokenExpired} from '../../utils/utils'
 
 const GameTokenProtectedRoute = ({
   children,

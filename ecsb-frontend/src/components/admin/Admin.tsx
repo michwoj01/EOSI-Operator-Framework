@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import React, {useRef, useState} from 'react';
 import GetGameSettingsForm from './forms/getGameSettingsForm/GetGameSettingsForm'
-import { useNavigate } from 'react-router-dom'
+import {useNavigate} from 'react-router-dom'
 import authService from '../../services/auth/AuthService'
 import CreateGameForm from './forms/createGameForm/CreateGameForm'
 import './Admin.css'

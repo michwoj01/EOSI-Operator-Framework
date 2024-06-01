@@ -10,6 +10,8 @@ services:
     volumes:
       - ./postgres15_data:/var/lib/postgresql/data
       - ./ecsb-backend/dbscripts/:/docker-entrypoint-initdb.d/
+    networks:
+      - my_network
 
   rabbitmq:
     container_name: rabbitmq
@@ -20,6 +22,8 @@ services:
     volumes:
       - ./ecsb-backend/rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # add configuration
       - ./ecsb-backend/rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins # add plugins
+    networks:
+      - my_network
 
   redis:
     container_name: redis
@@ -30,6 +34,8 @@ services:
       - '6379:6379'
     volumes:
       - ./cache:/redis_data
+    networks:
+      - my_network
 
   game-init:
     container_name: game-init
@@ -44,6 +50,8 @@ services:
     restart: on-failure
     ports:
       - '2136:2136'
+    networks:
+      - my_network
 
   moving:
     container_name: moving
@@ -58,6 +66,8 @@ services:
     restart: on-failure
     ports:
       - '8085:8085'
+    networks:
+      - my_network
 
   chat:
     container_name: chat
@@ -72,6 +82,8 @@ services:
     restart: on-failure
     ports:
       - '2138:2138'
+    networks:
+      - my_network
 
   game-engine:
     container_name: game-engine
@@ -85,6 +97,8 @@ services:
       - rabbitmq
       - chat
     restart: on-failure
+    networks:
+      - my_network
 
   timer:
     container_name: timer
@@ -98,6 +112,8 @@ services:
       - rabbitmq
       - chat
     restart: on-failure
+    networks:
+      - my_network
 
   webapp:
     container_name: webapp
@@ -118,3 +134,9 @@ services:
       - '5173:5173'
     env_file:
       - ecsb-frontend/.env
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge

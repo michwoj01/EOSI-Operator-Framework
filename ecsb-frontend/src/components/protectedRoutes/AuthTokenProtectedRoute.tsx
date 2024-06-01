@@ -1,6 +1,7 @@
-import type { ReactElement } from 'react'
-import { Navigate } from 'react-router-dom'
-import { decodeAuthToken, getAuthToken } from '../../apis/apis'
+import type {ReactElement} from 'react'
+import React from 'react';
+import {Navigate} from 'react-router-dom'
+import {decodeAuthToken, getAuthToken} from '../../apis/apis'
 
 const AuthTokenProtectedRoute = ({
   children,

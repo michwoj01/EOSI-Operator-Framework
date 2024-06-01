@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { type CreateGameFormData, type Travel } from '../CreateGameForm'
+import React, {useState} from 'react';
+import {type CreateGameFormData, type Travel} from '../CreateGameForm'
 import './GameTravelsForm.css'
 
 interface GameTravelsFormProps {

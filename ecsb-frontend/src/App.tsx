@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import React from 'react';
+import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom'
 import Game from './components/game/Game'
 import LoginForm from './components/auth/LoginForm'
 import RegisterForm from './components/auth/RegisterForm'
@@ -8,7 +9,7 @@ import NoAuthTokenProtectedRoute from './components/protectedRoutes/NoAuthTokenP
 import GameTokenProtectedRoute from './components/protectedRoutes/GameTokenProtectedRoute'
 import './App.css'
 import Admin from './components/admin/Admin'
-import { ToastContainer } from 'react-toastify'
+import {ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 const App = () => {

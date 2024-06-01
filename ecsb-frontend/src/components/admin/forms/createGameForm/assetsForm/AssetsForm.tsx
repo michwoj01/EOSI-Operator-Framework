@@ -1,4 +1,4 @@
-import { Fragment, type ReactElement } from 'react'
+import React, {Fragment, type ReactElement} from 'react';
 import './AssetsForm.css'
 
 interface AssetsFormProps {

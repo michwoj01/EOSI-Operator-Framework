@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
-import { stopGame } from '../../Game/Game'
+import React, {useEffect} from 'react';
+import {stopGame} from '../../Game/Game'
 import './Game.css'
-import { useGameStore } from '../../store/GameStore'
-import { Navigate } from 'react-router-dom'
+import {useGameStore} from '../../store/GameStore'
+import {Navigate} from 'react-router-dom'
 
 const Game = () => {
   const { gameData, setGameData } = useGameStore()

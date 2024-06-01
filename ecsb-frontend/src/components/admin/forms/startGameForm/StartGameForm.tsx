@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import React, {useRef, useState} from 'react';
 import gameService from '../../../../services/game/GameService'
 import './StartGameForm.css'
 import LoadingSpinner from '../../../common/spinner/LoadingSpinner'

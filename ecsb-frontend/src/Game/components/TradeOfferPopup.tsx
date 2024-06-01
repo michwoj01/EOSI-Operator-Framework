@@ -1,8 +1,9 @@
-import { toast } from 'react-toastify'
-import { type Scene } from '../scenes/Scene'
+import React from 'react';
+import {toast} from 'react-toastify'
+import {type Scene} from '../scenes/Scene'
 import './TradeOfferPopup.css'
-import { ERROR_TIMEOUT, RANGE, TOAST_DISMISS_TIMEOUT } from '../GameUtils'
-import { ErrorView } from '../views/ErrorView'
+import {ERROR_TIMEOUT, RANGE, TOAST_DISMISS_TIMEOUT} from '../GameUtils'
+import {ErrorView} from '../views/ErrorView'
 
 interface TradeProps {
   scene: Scene

@@ -1,6 +1,7 @@
-import { type CreateGameRequest } from '../../../../../apis/game/Types'
+import React from 'react';
+import {type CreateGameRequest} from '../../../../../apis/game/Types'
 import gameService from '../../../../../services/game/GameService'
-import { type ClassResource, type CreateGameFormData, type Travel } from '../CreateGameForm'
+import {type ClassResource, type CreateGameFormData, type Travel} from '../CreateGameForm'
 import './SubmitForm.css'
 
 interface SubmitFormProps {

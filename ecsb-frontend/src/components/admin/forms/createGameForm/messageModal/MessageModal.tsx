@@ -1,3 +1,4 @@
+import React from 'react';
 import './MessageModal.css'
 
 interface MessageModalProps {

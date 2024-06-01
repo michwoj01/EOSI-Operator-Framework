@@ -1,12 +1,12 @@
-import { useNavigate } from 'react-router'
-import type { NavigateFunction } from 'react-router'
-import { useRef, useState } from 'react'
+import React, {useRef, useState} from 'react';
+import type {NavigateFunction} from 'react-router'
+import {useNavigate} from 'react-router'
 import gameService from '../../services/game/GameService'
-import { getAuthToken, getGameToken } from '../../apis/apis'
+import {getAuthToken, getGameToken} from '../../apis/apis'
 import './Home.css'
 import HomeNavbar from './HomeNavbar'
-import { useGameStore } from '../../store/GameStore'
-import { startGame } from '../../Game/Game'
+import {useGameStore} from '../../store/GameStore'
+import {startGame} from '../../Game/Game'
 import LoadingSpinner from '../common/spinner/LoadingSpinner'
 
 const Home = () => {
