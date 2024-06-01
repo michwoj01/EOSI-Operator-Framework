@@ -15,10 +15,10 @@ spec:
       volumeMounts:
         # TODO: move to persistent storage (?)
         - mountPath: /redis_data
-          name: redis-claim0
+          name: redis-cache
   restartPolicy: OnFailure
   volumes:
-    - name: redis-claim0
+    - name: redis-cache
       persistentVolumeClaim:
-        claimName: redis-claim0
+        claimName: redis-cache-claim
 status: {}

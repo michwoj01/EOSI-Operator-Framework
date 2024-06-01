@@ -1,8 +1,9 @@
 ## Local k8s cluster tutorial
 
-Start minikube:
+Start minikube and mount db scripts:
 ```sh
 minikube start
+minikube mount ./dbscripts:/dbscripts
 ```
 
 Setup kubernetes:

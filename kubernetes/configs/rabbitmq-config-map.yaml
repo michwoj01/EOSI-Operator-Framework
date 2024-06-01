@@ -5,5 +5,7 @@ metadata:
 data:
   enabled-plugins: "[rabbitmq_management,rabbitmq_sharding]."
   rabbitmq-conf: |
+    listeners.tcp.default = 5672
+    management.tcp.port = 15672
     vm_memory_high_watermark.relative = 0.4
     vm_memory_calculation_strategy = rss

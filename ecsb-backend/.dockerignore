@@ -1,7 +1,4 @@
 **/build
-postgres15_data
-dbscripts
-cache
 .gradle/
 .run
 gradle/

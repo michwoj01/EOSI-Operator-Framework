@@ -6,7 +6,9 @@ metadata:
     app.kubernetes.io/name: postgres
 spec:
   containers:
-    - env:
+    - image: postgres:15.3
+      name: postgres
+      env:
         - name: POSTGRES_DB
           value: "mydb"
         - name: POSTGRES_PASSWORD
@@ -15,24 +17,21 @@ spec:
           value: "5432"
         - name: POSTGRES_USER
           value: "postgres"
-      image: postgres:15.3
-      name: postgres
       ports:
         - containerPort: 5432
-      resources: {}
+      resources: { }
       volumeMounts:
         # TODO: move to persistent storage 
         - mountPath: /var/lib/postgresql/data
-          name: postgres-claim0
+          name: postgres-data
         # TODO: move to dockerfile 
         - mountPath: /docker-entrypoint-initdb.d/
-          name: postgres-claim1
+          name: postgres-scripts
   restartPolicy: OnFailure
   volumes:
-    - name: postgres-claim0
+    - name: postgres-data
       persistentVolumeClaim:
-        claimName: postgres-claim0
-    - name: postgres-claim1
+        claimName: postgres-data-claim
+    - name: postgres-scripts
       persistentVolumeClaim:
-        claimName: postgres-claim1
-status: {}
+        claimName: postgres-scripts-claim
