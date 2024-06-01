@@ -3,7 +3,7 @@
 Start minikube and mount db scripts:
 ```sh
 minikube start
-minikube mount ./dbscripts:/dbscripts
+minikube mount ./dbscripts:/dbscripts #temorary, we want to copy scripts to node
 ```
 
 Setup kubernetes:
@@ -20,4 +20,9 @@ just rerun the command.
 Check pods statuses:
 ```sh
 kubectl get pods
+```
+
+Check cluster dashboard:
+```sh
+minikube dashboard
 ```
