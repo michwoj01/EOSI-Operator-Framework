@@ -28,16 +28,17 @@ spec:
       ports:
         - containerPort: 15672
         - containerPort: 5672
-      volumeMounts:
-        - mountPath: /etc/rabbitmq/
-          name: rabbitmq
+  # TODO wrap rabbitMQ with operator and make it mount config files with properties
+  #      volumeMounts:
+  #        - mountPath: /etc/rabbitmq/
+  #          name: rabbitmq
   restartPolicy: Always
-  volumes:
-    - name: rabbitmq
-      configMap:
-        name: rabbitmq-config
-        items:
-        - key: rabbitmq-conf
-          path: rabbitmq.conf
-        - key: enabled-plugins
-          path: enabled_plugins
+#  volumes:
+#    - name: rabbitmq
+#      configMap:
+#        name: rabbitmq-config
+#        items:
+#        - key: rabbitmq-conf
+#          path: rabbitmq.conf
+#        - key: enabled-plugins
+#          path: enabled_plugins
