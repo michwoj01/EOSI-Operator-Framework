@@ -31,6 +31,10 @@ type PostgresSpec struct {
 	Size          int32  `json:"size"`
 	Image         string `json:"image"`
 	DbScriptsPath string `json:"dbScriptsPath"`
+	DbName        string `json:"dbName"`
+	DbUser        string `json:"dbUser"`
+	DbPassword    string `json:"dbPassword"`
+	DbPort        string `json:"dbPort"`
 }
 
 // PostgresStatus defines the observed state of Postgres

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -92,6 +93,15 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
+
+	// Check if required environment variables are set
+	if cr.Spec.DbName == "" || cr.Spec.DbUser == "" || cr.Spec.DbPassword == "" || cr.Spec.DbPort == "" {
+		errMsg := fmt.Sprintf("Missing required environment variables for Postgres: DbName=%s, DbUser=%s, DbPassword=%s, DbPort=%s",
+			cr.Spec.DbName, cr.Spec.DbUser, cr.Spec.DbPassword, cr.Spec.DbPort)
+		r.Log.Error(fmt.Errorf(errMsg), "Environment variables not set")
+		return nil
+	}
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
@@ -106,6 +116,24 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 					ContainerPort: 5432,
 					Name:          "postgres",
 				}},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "POSTGRES_DB",
+						Value: cr.Spec.DbName,
+					},
+					{
+						Name:  "POSTGRES_USER",
+						Value: cr.Spec.DbUser,
+					},
+					{
+						Name:  "POSTGRES_PASSWORD",
+						Value: cr.Spec.DbPassword,
+					},
+					{
+						Name:  "POSTGRES_PORT",
+						Value: cr.Spec.DbPort,
+					},
+				},
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      "dbscripts",
 					MountPath: "/docker-entrypoint-initdb.d",
