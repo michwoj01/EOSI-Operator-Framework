@@ -1,0 +1,12 @@
+apiVersion: database.pl.edu.agh/v1
+kind: Postgres
+metadata:
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: postgres-sample
+    app.kubernetes.io/part-of: kubernetes-operators
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-operators
+  name: postgres-sample
+spec:
+  # TODO(user): Add fields here
