@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: game-init-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 2136
+      targetPort: 2136
+  selector:
+    app.kubernetes.io/name: game-init
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: game-init
@@ -10,6 +22,4 @@ spec:
       name: game-init
       ports:
         - containerPort: 2136
-      resources: {}
   restartPolicy: OnFailure
-status: {}

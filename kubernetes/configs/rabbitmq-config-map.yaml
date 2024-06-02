@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: rabbitmq
+  name: rabbitmq-config
 data:
   enabled-plugins: "[rabbitmq_management,rabbitmq_sharding]."
   rabbitmq-conf: |

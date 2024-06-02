@@ -1,4 +1,21 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+spec:
+  ports:
+    - name: "management"
+      protocol: TCP
+      port: 15672
+      targetPort: 15672
+    - name: "connections"
+      protocol: TCP
+      port: 5672
+      targetPort: 5672
+  selector:
+    app.kubernetes.io/name: rabbitmq
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: rabbitmq
@@ -11,7 +28,6 @@ spec:
       ports:
         - containerPort: 15672
         - containerPort: 5672
-      resources: {}
       volumeMounts:
         - mountPath: /etc/rabbitmq/
           name: rabbitmq
@@ -19,10 +35,9 @@ spec:
   volumes:
     - name: rabbitmq
       configMap:
-        name: rabbitmq
+        name: rabbitmq-config
         items:
         - key: rabbitmq-conf
           path: rabbitmq.conf
         - key: enabled-plugins
           path: enabled_plugins
-status: {}

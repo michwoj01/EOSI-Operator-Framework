@@ -1,4 +1,21 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  ports:
+    - name: "management"
+      protocol: TCP
+      port: 8001
+      targetPort: 8001
+    - name: "connections"
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+  selector:
+    app.kubernetes.io/name: redis
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: redis
@@ -11,9 +28,8 @@ spec:
       ports:
         - containerPort: 8001
         - containerPort: 6379
-      resources: {}
       volumeMounts:
-        # TODO: move to persistent storage (?)
+        # TODO: move to persistent storage
         - mountPath: /redis_data
           name: redis-cache
   restartPolicy: OnFailure
@@ -21,4 +37,3 @@ spec:
     - name: redis-cache
       persistentVolumeClaim:
         claimName: redis-cache-claim
-status: {}

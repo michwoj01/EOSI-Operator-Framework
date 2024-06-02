@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 5173
+      targetPort: 5173
+      nodePort: 30000
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: webapp
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp
+  labels:
+    app.kubernetes.io/name: webapp
+spec:
+  containers:
+    - image: michwoj01/ecsb:webapp
+      name: webapp
+      ports:
+        - containerPort: 5173
+      env:
+        - name: "VITE_ECSB_MOVEMENT_WS_API_URL"
+          value: "ws://ecsb.com/moving"
+        - name: "VITE_ECSB_CHAT_WS_API_URL"
+          value: "ws://ecsb.com/chat"
+        - name: "VITE_ECSB_LOBBY_WS_API_URL"
+          value: "ws://ecsb.com/chat/landing"
+        - name: "VITE_ECSB_HTTP_AUTH_AND_MENAGEMENT_API_URL"
+          value: "http://ecsb.com/api"
+        - name: "VITE_ECSB_HTTP_SELF_INTERACTIONS_API_URL"
+          value: "http://ecsb.com/chat"
+  restartPolicy: Always

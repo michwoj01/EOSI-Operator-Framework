@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+spec:
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: postgres
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: postgres
@@ -19,12 +31,11 @@ spec:
           value: "postgres"
       ports:
         - containerPort: 5432
-      resources: { }
       volumeMounts:
         # TODO: move to persistent storage 
         - mountPath: /var/lib/postgresql/data
           name: postgres-data
-        # TODO: move to dockerfile 
+        # TODO: move to persistent storage and provide scripts inside cluster
         - mountPath: /docker-entrypoint-initdb.d/
           name: postgres-scripts
   restartPolicy: OnFailure
