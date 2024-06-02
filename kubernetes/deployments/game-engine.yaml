@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: game-engine
+  name: game-engine-pod
   labels:
     app.kubernetes.io/name: game-engine
 spec:

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: timer
+  name: timer-pod
   labels:
     app.kubernetes.io/name: timer
 spec:

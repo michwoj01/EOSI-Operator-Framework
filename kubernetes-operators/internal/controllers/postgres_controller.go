@@ -15,7 +15,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/api/v1"
 )
@@ -27,30 +26,30 @@ type PostgresReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=database.pl.edu.agh.operators,resources=postgres,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=database.pl.edu.agh.operators,resources=postgres/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=database.pl.edu.agh.operators,resources=postgres/finalizers,verbs=update
+// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres/finalizers,verbs=update
 
 func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := r.Log.WithValues("postgres", req.NamespacedName)
 
 	// Fetch the Postgres instance
+	logger.Info("Fetching Postgres instance")
 	postgres := &databasev1.Postgres{}
 	err := r.Get(ctx, req.NamespacedName, postgres)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
+			logger.Info("Postgres resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
+		logger.Error(err, "Failed to get Postgres")
 		return ctrl.Result{}, err
 	}
 
 	// Ensure PVC exists
 	_, err = r.ensurePVC(ctx, postgres)
 	if err != nil {
+		logger.Error(err, "Failed to ensure PVC")
 		return ctrl.Result{}, err
 	}
 
@@ -59,6 +58,7 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Set Postgres instance as the owner and controller
 	if err := controllerutil.SetControllerReference(postgres, pod, r.Scheme); err != nil {
+		logger.Error(err, "Failed to set controller reference")
 		return ctrl.Result{}, err
 	}
 
@@ -66,13 +66,16 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	found := &corev1.Pod{}
 	err = r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
+		logger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 		err = r.Create(ctx, pod)
 		if err != nil {
+			logger.Error(err, "Failed to create new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 			return ctrl.Result{}, err
 		}
 		// Pod created successfully - return and requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
+		logger.Error(err, "Failed to get Pod")
 		return ctrl.Result{}, err
 	}
 
@@ -82,6 +85,7 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		postgres.Status.Nodes = podNames
 		err := r.Status().Update(ctx, postgres)
 		if err != nil {
+			logger.Error(err, "Failed to update Postgres status")
 			return ctrl.Result{}, err
 		}
 	}
@@ -90,6 +94,9 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
+	logger := r.Log.WithValues("postgres", cr.Name)
+	logger.Info("Creating a new Pod for Postgres: " + cr.Name)
+
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -162,10 +169,13 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 }
 
 func (r *PostgresReconciler) ensurePVC(ctx context.Context, postgres *databasev1.Postgres) (*corev1.PersistentVolumeClaim, error) {
+	logger := r.Log.WithValues("postgres", postgres.Name)
+	logger.Info("Ensuring PVC for Postgres")
+
 	pvc := &corev1.PersistentVolumeClaim{}
 	err := r.Get(ctx, types.NamespacedName{Name: postgres.Name + "-data", Namespace: postgres.Namespace}, pvc)
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new PVC
+		logger.Info("PVC not found, creating a new one")
 		pvc = &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      postgres.Name + "-data",
@@ -185,19 +195,23 @@ func (r *PostgresReconciler) ensurePVC(ctx context.Context, postgres *databasev1
 		}
 		// Set Postgres instance as the owner and controller
 		if err := controllerutil.SetControllerReference(postgres, pvc, r.Scheme); err != nil {
+			logger.Error(err, "Failed to set controller reference for PVC")
 			return nil, err
 		}
 		err = r.Create(ctx, pvc)
 		if err != nil {
+			logger.Error(err, "Failed to create PVC")
 			return nil, err
 		}
 	} else if err != nil {
+		logger.Error(err, "Failed to get PVC")
 		return nil, err
 	}
 	return pvc, nil
 }
 
 func (r *PostgresReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log = ctrl.Log.WithName("controllers").WithName("Postgres")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&databasev1.Postgres{}).
 		Complete(r)
