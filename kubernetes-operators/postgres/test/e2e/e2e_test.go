@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/test/utils"
+	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/test/utils"
 )
 
 const namespace = "kubernetes-operators-system"

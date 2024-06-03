@@ -1,7 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-scripts-claim
+  name: postgres-scripts-pvc
+  namespace: default
   labels:
     app.kubernetes.io/name: postgres
 spec:

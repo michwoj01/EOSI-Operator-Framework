@@ -9,7 +9,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: kubernetes-operators
-repo: github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators
+repo: github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres
 resources:
 - api:
     crdVersion: v1
@@ -18,6 +18,6 @@ resources:
   domain: pl.edu.agh
   group: database
   kind: Postgres
-  path: github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/api/v1
+  path: github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1
   version: v1
 version: "3"

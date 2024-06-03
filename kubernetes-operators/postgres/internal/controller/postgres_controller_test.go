@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/api/v1"
+	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
 )
 
 var _ = Describe("Postgres Controller", func() {

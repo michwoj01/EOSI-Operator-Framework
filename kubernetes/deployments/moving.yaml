@@ -13,7 +13,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: moving-pod
+  name: moving
   labels:
     app.kubernetes.io/name: moving
 spec:

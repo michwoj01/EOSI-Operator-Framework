@@ -13,7 +13,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: chat-pod
+  name: chat
   labels:
     app.kubernetes.io/name: chat
 spec:

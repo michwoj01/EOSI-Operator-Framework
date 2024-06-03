@@ -1,4 +1,4 @@
-module github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators
+module github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres
 
 go 1.20
 

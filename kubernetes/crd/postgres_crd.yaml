@@ -16,22 +16,66 @@ spec:
     storage: true
     schema:
       openAPIV3Schema:
+        description: Postgres is the Schema for the postgres API
         type: object
         properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
           spec:
+            description: PostgresSpec defines the desired state of Postgres
             type: object
             properties:
               size:
+                description: Number of Postgres instances
                 type: integer
               image:
-                type: string
-              dbScriptsPath:
+                description: Docker image for the Postgres instance
                 type: string
               dbName:
+                description: Name of the database
                 type: string
               dbUser:
+                description: Username for the database
                 type: string
               dbPassword:
+                description: Password for the database
                 type: string
               dbPort:
+                description: Port for the database
                 type: string
+              scriptsPvcName:
+                description: Name of the PVC with the database scripts
+                type: string
+              dataPvcName:
+                description: Name of the PVC with the database data
+                type: string
+            required:
+              - size
+              - image
+              - dbName
+              - dbUser
+              - dbPassword
+              - dbPort
+              - scriptsPvcName
+              - dataPvcName
+          status:
+            description: PostgresStatus defines the observed state of Postgres
+            type: object
+            properties:
+              nodes:
+                description: 'Nodes is the list of Postgres pods'
+                type: array
+                items:
+                  type: string
+    subresources:
+      status: {}

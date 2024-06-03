@@ -13,7 +13,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: game-init-pod
+  name: game-init
   labels:
     app.kubernetes.io/name: game-init
 spec:

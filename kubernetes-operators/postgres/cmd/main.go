@@ -34,8 +34,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/api/v1"
-	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/internal/controllers"
+	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
+	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -122,8 +122,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.PostgresReconciler{
+	if err = (&controller.PostgresReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Postgres"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Postgres")

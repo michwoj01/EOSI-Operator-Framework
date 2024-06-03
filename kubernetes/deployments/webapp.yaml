@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: webapp-pod
+  name: webapp
   labels:
     app.kubernetes.io/name: webapp
 spec:
