@@ -28,14 +28,14 @@ type PostgresSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Size           int32  `json:"size"`
-	Image          string `json:"image"`
-	DbName         string `json:"dbName"`
-	DbUser         string `json:"dbUser"`
-	DbPassword     string `json:"dbPassword"`
-	DbPort         string `json:"dbPort"`
-	ScriptsPvcName string `json:"scriptsPvcName"`
-	DataPvcName    string `json:"dataPvcName"`
+	Size                 int32  `json:"size"`
+	Image                string `json:"image"`
+	DbName               string `json:"dbName"`
+	DbUser               string `json:"dbUser"`
+	DbPassword           string `json:"dbPassword"`
+	DbPort               string `json:"dbPort"`
+	DataPvcName          string `json:"dataPvcName"`
+	InitScriptsConfigMap string `json:"initScriptsConfigMap"`
 }
 
 // PostgresStatus defines the observed state of Postgres

@@ -49,13 +49,8 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	// Ensure PVCs exist
-	logger.Info("Ensuring PVCs exist")
 	if err := r.ensurePVC(ctx, postgres.Spec.DataPvcName, postgres); err != nil {
 		logger.Error(err, "Failed to ensure data PVC")
-		return ctrl.Result{}, err
-	}
-	if err := r.ensurePVC(ctx, postgres.Spec.ScriptsPvcName, postgres); err != nil {
-		logger.Error(err, "Failed to ensure scripts PVC")
 		return ctrl.Result{}, err
 	}
 
@@ -75,7 +70,6 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 
-		logger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 		err = r.Create(ctx, pod)
 		if err != nil {
 			logger.Error(err, "Failed to create new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
@@ -116,89 +110,6 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
-	logger := r.Log.WithValues("namespace", cr.Namespace, "postgres", cr.Name)
-	logger.Info("Creating a new Pod for Postgres")
-
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-
-	// Check if required environment variables are set
-	if cr.Spec.DbName == "" || cr.Spec.DbUser == "" || cr.Spec.DbPassword == "" || cr.Spec.DbPort == "" {
-		errMsg := fmt.Sprintf("Missing required environment variables for Postgres: DbName=%s, DbUser=%s, DbPassword=%s, DbPort=%s",
-			cr.Spec.DbName, cr.Spec.DbUser, cr.Spec.DbPassword, cr.Spec.DbPort)
-		logger.Error(fmt.Errorf(errMsg), "Environment variables not set")
-		return nil
-	}
-
-	// Check if required PVCs are set
-	if cr.Spec.DataPvcName == "" || cr.Spec.ScriptsPvcName == "" {
-		errMsg := fmt.Sprintf("Missing required PVCs for Postgres: DataPvcName=%s, ScriptsPvcName=%s",
-			cr.Spec.DataPvcName, cr.Spec.ScriptsPvcName)
-		logger.Error(fmt.Errorf(errMsg), "PVCs not set")
-		return nil
-	}
-
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:  "postgres",
-				Image: cr.Spec.Image,
-				Ports: []corev1.ContainerPort{{
-					ContainerPort: 5432,
-					Name:          "postgres",
-				}},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "POSTGRES_DB",
-						Value: cr.Spec.DbName,
-					},
-					{
-						Name:  "POSTGRES_USER",
-						Value: cr.Spec.DbUser,
-					},
-					{
-						Name:  "POSTGRES_PASSWORD",
-						Value: cr.Spec.DbPassword,
-					},
-					{
-						Name:  "POSTGRES_PORT",
-						Value: cr.Spec.DbPort,
-					},
-				},
-				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "postgres-scripts",
-					MountPath: "/docker-entrypoint-initdb.d",
-				}, {
-					Name:      "postgres-data",
-					MountPath: "/var/lib/postgresql/data",
-				}},
-			}},
-			Volumes: []corev1.Volume{{
-				Name: "postgres-scripts",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: cr.Spec.ScriptsPvcName,
-					},
-				},
-			}, {
-				Name: "postgres-data",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: cr.Spec.DataPvcName,
-					},
-				},
-			}},
-		},
-	}
 }
 
 func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, postgres *databasev1.Postgres) error {
@@ -244,6 +155,106 @@ func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, post
 	}
 
 	return nil
+}
+
+func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
+	logger := r.Log.WithValues("namespace", cr.Namespace, "postgres", cr.Name)
+	logger.Info("Creating a new Pod for Postgres")
+
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	// Check if required environment variables are set
+	if cr.Spec.DbName == "" || cr.Spec.DbUser == "" || cr.Spec.DbPassword == "" || cr.Spec.DbPort == "" {
+		errMsg := fmt.Sprintf("Missing required environment variables for Postgres: DbName=%s, DbUser=%s, DbPassword=%s, DbPort=%s",
+			cr.Spec.DbName, cr.Spec.DbUser, cr.Spec.DbPassword, cr.Spec.DbPort)
+		logger.Error(fmt.Errorf(errMsg), "Environment variables not set")
+		return nil
+	}
+
+	// Check if required PVC is set
+	if cr.Spec.DataPvcName == "" {
+		errMsg := fmt.Sprintf("Missing required PVC for Postgres: DataPvcName=%s", cr.Spec.DataPvcName)
+		logger.Error(fmt.Errorf(errMsg), "PVC not set")
+		return nil
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: "postgres-data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: cr.Spec.DataPvcName,
+				},
+			},
+		},
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "postgres-data",
+			MountPath: "/var/lib/postgresql/data",
+		},
+	}
+
+	if cr.Spec.InitScriptsConfigMap != "" {
+		logger.Info("Adding init scripts volume to the Pod")
+
+		volumes = append(volumes, corev1.Volume{
+			Name: "init-scripts",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Spec.InitScriptsConfigMap,
+					},
+				},
+			},
+		})
+
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "init-scripts",
+			MountPath: "/docker-entrypoint-initdb.d",
+		})
+	}
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{
+				Name:  "postgres",
+				Image: cr.Spec.Image,
+				Ports: []corev1.ContainerPort{{
+					ContainerPort: 5432,
+					Name:          "postgres",
+				}},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "POSTGRES_DB",
+						Value: cr.Spec.DbName,
+					},
+					{
+						Name:  "POSTGRES_USER",
+						Value: cr.Spec.DbUser,
+					},
+					{
+						Name:  "POSTGRES_PASSWORD",
+						Value: cr.Spec.DbPassword,
+					},
+					{
+						Name:  "POSTGRES_PORT",
+						Value: cr.Spec.DbPort,
+					},
+				},
+				VolumeMounts: volumeMounts,
+			}},
+			Volumes: volumes,
+		},
+	}
 }
 
 func (r *PostgresReconciler) SetupWithManager(mgr ctrl.Manager) error {

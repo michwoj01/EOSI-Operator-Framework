@@ -53,11 +53,11 @@ spec:
               dbPort:
                 description: Port for the database
                 type: string
-              scriptsPvcName:
-                description: Name of the PVC with the database scripts
+              initScriptsConfigMap:
+                description: Name of the ConfigMap with the database init scripts
                 type: string
               dataPvcName:
-                description: Name of the PVC with the database data
+                description: Name of the PVC that will be used for the database data
                 type: string
             required:
               - size
@@ -66,7 +66,6 @@ spec:
               - dbUser
               - dbPassword
               - dbPort
-              - scriptsPvcName
               - dataPvcName
           status:
             description: PostgresStatus defines the observed state of Postgres

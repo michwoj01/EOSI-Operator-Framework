@@ -16,7 +16,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-data
+  name: postgres-data-pv
   labels:
     type: local
     app.kubernetes.io/name: postgres

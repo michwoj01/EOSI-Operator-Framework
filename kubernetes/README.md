@@ -7,7 +7,7 @@ minikube start
 
 Setup kubernetes:
 ```sh
-kubectl apply -k kubernetes
+./deploy.sh
 ```
 
 If you happen to see
