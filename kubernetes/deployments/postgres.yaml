@@ -1,48 +1,46 @@
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: postgres
+  name: postgres-operator
+  namespace: default
 spec:
-  ports:
-    - protocol: TCP
-      port: 5432
-      targetPort: 5432
+  replicas: 1
   selector:
-    app.kubernetes.io/name: postgres
+    matchLabels:
+      app: postgres-operator
+  template:
+    metadata:
+      labels:
+        app: postgres-operator
+    spec:
+      serviceAccountName: postgres-operator-sa
+      containers:
+      - name: operator
+        image: matipl01/ecsb-postgres-operator:v1.0.0
+        ports:
+        - containerPort: 8080
+        args:
+        - "--zap-log-level=debug"
+        - "--zap-stacktrace-level=info"
+        - "--zap-encoder=console"
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: database.pl.edu.agh/v1
+kind: Postgres
 metadata:
   name: postgres
+  namespace: default
   labels:
     app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/part-of: kubernetes-operators
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-operators
 spec:
-  containers:
-    - image: postgres:15.3
-      name: postgres
-      env:
-        - name: POSTGRES_DB
-          value: "mydb"
-        - name: POSTGRES_PASSWORD
-          value: "postgres"
-        - name: POSTGRES_PORT
-          value: "5432"
-        - name: POSTGRES_USER
-          value: "postgres"
-      ports:
-        - containerPort: 5432
-      volumeMounts:
-        # TODO: move to persistent storage 
-        - mountPath: /var/lib/postgresql/data
-          name: postgres-data
-        # TODO: move to persistent storage and provide scripts inside cluster
-        - mountPath: /docker-entrypoint-initdb.d/
-          name: postgres-scripts
-  restartPolicy: OnFailure
-  volumes:
-    - name: postgres-data
-      persistentVolumeClaim:
-        claimName: postgres-data-claim
-    - name: postgres-scripts
-      persistentVolumeClaim:
-        claimName: postgres-scripts-claim
+  size: 1
+  image: postgres:15.3
+  dbName: mydb
+  dbUser: postgres
+  dbPassword: postgres
+  dbPort: "5432"
+  dataPvcName: "postgres-data-pvc"
+  initScriptsConfigMap: "postgres-init-scripts"

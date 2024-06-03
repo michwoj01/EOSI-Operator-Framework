@@ -1,0 +1,47 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: postgres-operator-cr
+rules:
+- apiGroups: 
+  - database.pl.edu.agh
+  resources: 
+  - postgres
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups: 
+  - database.pl.edu.agh
+  resources: 
+  - postgres/status
+  verbs: 
+  - get
+  - update
+  - patch
+- apiGroups: 
+  - ""
+  resources: 
+  - persistentvolumeclaims
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups: 
+  - ""
+  resources: 
+  - pods
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - delete
