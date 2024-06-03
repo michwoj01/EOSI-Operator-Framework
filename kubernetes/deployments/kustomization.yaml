@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - postgres.yaml
+  - rabbitmq.yaml
+  - redis.yaml
+  - game-engine.yaml
+  - game-init.yaml
+  - timer.yaml
+  - chat.yaml
+  - moving.yaml
+  - webapp.yaml

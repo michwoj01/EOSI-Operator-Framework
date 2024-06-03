@@ -134,6 +134,14 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 		return nil
 	}
 
+	// Check if required PVCs are set
+	if cr.Spec.DataPvcName == "" || cr.Spec.ScriptsPvcName == "" {
+		errMsg := fmt.Sprintf("Missing required PVCs for Postgres: DataPvcName=%s, ScriptsPvcName=%s",
+			cr.Spec.DataPvcName, cr.Spec.ScriptsPvcName)
+		logger.Error(fmt.Errorf(errMsg), "PVCs not set")
+		return nil
+	}
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -167,7 +175,7 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "dbscripts",
+					Name:      "postgres-scripts",
 					MountPath: "/docker-entrypoint-initdb.d",
 				}, {
 					Name:      "postgres-data",
@@ -175,7 +183,7 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 				}},
 			}},
 			Volumes: []corev1.Volume{{
-				Name: "dbscripts",
+				Name: "postgres-scripts",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: cr.Spec.ScriptsPvcName,
@@ -231,8 +239,10 @@ func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, post
 	} else if err != nil {
 		logger.Error(err, "Failed to get PVC")
 		return err
+	} else {
+		logger.Info("PVC already exists")
 	}
-	logger.Info("PVC ensured")
+
 	return nil
 }
 

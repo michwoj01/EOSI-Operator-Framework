@@ -16,7 +16,7 @@ spec:
       serviceAccountName: postgres-operator-sa
       containers:
       - name: operator
-        image: matipl01/kubernetes-operators:v0.1.18
+        image: matipl01/kubernetes-operators:v0.1.22
         ports:
         - containerPort: 8080
         args:
