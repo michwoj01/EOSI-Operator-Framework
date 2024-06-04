@@ -5,6 +5,5 @@ resources:
   - crd
   - rbac
   - volumes
-  - configs
   - ingress
   - deployments

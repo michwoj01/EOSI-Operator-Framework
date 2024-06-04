@@ -4,7 +4,7 @@ metadata:
   name: rabbitmq-operator-cr
 rules:
 - apiGroups: 
-  - apps.example.com
+  - apps.pl.edu.agh
   resources: 
   - rabbitmqs
   verbs: 
@@ -16,7 +16,7 @@ rules:
   - patch
   - delete
 - apiGroups: 
-  - apps.example.com
+  - apps.pl.edu.agh
   resources: 
   - rabbitmqs/status
   verbs: 
@@ -44,4 +44,28 @@ rules:
   - list
   - watch
   - create
+  - delete
+- apiGroups: 
+  - ""
+  resources: 
+  - configmaps
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups: 
+  - apps
+  resources: 
+  - deployments
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
   - delete

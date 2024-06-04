@@ -40,9 +40,9 @@ type RabbitMQReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=apps.example.com,resources=rabbitmqs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.example.com,resources=rabbitmqs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.example.com,resources=rabbitmqs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
