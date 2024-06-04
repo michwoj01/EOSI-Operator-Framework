@@ -4,3 +4,4 @@ resources:
   - postgres-scripts.yaml
   - postgres-data.yaml
   - redis-cache.yaml
+  - game-init-assets.yaml

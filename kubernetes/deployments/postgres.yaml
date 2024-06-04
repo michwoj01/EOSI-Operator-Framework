@@ -1,3 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: postgres
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,14 +27,14 @@ spec:
     spec:
       serviceAccountName: postgres-operator-sa
       containers:
-      - name: operator
-        image: matipl01/ecsb-postgres-operator:v1.0.0
-        ports:
-        - containerPort: 8080
-        args:
-        - "--zap-log-level=debug"
-        - "--zap-stacktrace-level=info"
-        - "--zap-encoder=console"
+        - name: operator
+          image: matipl01/ecsb-postgres-operator:v1.0.0
+          ports:
+            - containerPort: 5432
+          args:
+            - "--zap-log-level=debug"
+            - "--zap-stacktrace-level=info"
+            - "--zap-encoder=console"
 ---
 apiVersion: database.pl.edu.agh/v1
 kind: Postgres
