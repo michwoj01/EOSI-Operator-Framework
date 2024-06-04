@@ -6,9 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/name: postgres
 spec:
-  storageClassName: manual
+  storageClassName: local-storage
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 100Mi
@@ -21,10 +21,10 @@ metadata:
     type: local
     app.kubernetes.io/name: postgres
 spec:
-  storageClassName: manual
+  storageClassName: local-storage
   capacity:
     storage: 100Mi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   hostPath:
     path: /dbscripts
