@@ -1,0 +1,47 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rabbitmq-operator-cr
+rules:
+- apiGroups: 
+  - apps.example.com
+  resources: 
+  - rabbitmqs
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups: 
+  - apps.example.com
+  resources: 
+  - rabbitmqs/status
+  verbs: 
+  - get
+  - update
+  - patch
+- apiGroups: 
+  - ""
+  resources: 
+  - persistentvolumeclaims
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups: 
+  - ""
+  resources: 
+  - pods
+  verbs: 
+  - get
+  - list
+  - watch
+  - create
+  - delete

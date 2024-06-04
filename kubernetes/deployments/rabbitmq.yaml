@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: rabbitmq-service
+  namespace: default
 spec:
   ports:
     - name: "management"
@@ -15,30 +16,49 @@ spec:
   selector:
     app.kubernetes.io/name: rabbitmq
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-operator
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-operator
+    spec:
+      serviceAccountName: rabbitmq-operator-sa
+      containers:
+      - name: operator
+        image: matipl01/ecsb-rabbitmq-operator:v0.1.0
+        ports:
+        - containerPort: 8080
+        args:
+        - "--zap-log-level=debug"
+        - "--zap-stacktrace-level=info"
+        - "--zap-encoder=console"
+---
+apiVersion: apps.pl.edu.agh/v1
+kind: RabbitMQ
 metadata:
   name: rabbitmq
+  namespace: default
   labels:
     app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/instance: rabbitmq
+    app.kubernetes.io/part-of: kubernetes-operators
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-operators
 spec:
-  containers:
-    - image: rabbitmq:3.12-management
-      name: rabbitmq
-      ports:
-        - containerPort: 15672
-        - containerPort: 5672
-  # TODO wrap rabbitMQ with operator and make it mount config files with properties
-  #      volumeMounts:
-  #        - mountPath: /etc/rabbitmq/
-  #          name: rabbitmq
-  restartPolicy: Always
-#  volumes:
-#    - name: rabbitmq
-#      configMap:
-#        name: rabbitmq-config
-#        items:
-#        - key: rabbitmq-conf
-#          path: rabbitmq.conf
-#        - key: enabled-plugins
-#          path: enabled_plugins
+  image: rabbitmq:3.12-management
+  config: |
+    vm_memory_high_watermark.relative = 0.4
+    vm_memory_calculation_strategy = rss
+  plugins: "[rabbitmq_management,rabbitmq_sharding]."
+  ports:
+    - containerPort: 15672
+    - containerPort: 5672

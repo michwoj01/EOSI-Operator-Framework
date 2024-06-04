@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,12 +29,10 @@ type RabbitMQSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Image is the Docker image for RabbitMQ
-	Image string `json:"image,omitempty"`
-	// Config is the RabbitMQ configuration file
-	Config string `json:"config,omitempty"`
-	// Plugins is the list of enabled plugins
-	Plugins string `json:"plugins,omitempty"`
+	Image   string                 `json:"image,omitempty"`
+	Config  string                 `json:"config,omitempty"`
+	Plugins string                 `json:"plugins,omitempty"`
+	Ports   []corev1.ContainerPort `json:"ports,omitempty"`
 }
 
 // RabbitMQStatus defines the observed state of RabbitMQ
