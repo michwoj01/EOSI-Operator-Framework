@@ -8,7 +8,7 @@ spec:
       port: 5432
       targetPort: 5432
   selector:
-    app.kubernetes.io/name: postgres-operator
+    app: postgres
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -47,6 +47,7 @@ metadata:
     app.kubernetes.io/part-of: kubernetes-operators
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubernetes-operators
+    app: postgres
 spec:
   size: 1
   image: postgres:15.3
