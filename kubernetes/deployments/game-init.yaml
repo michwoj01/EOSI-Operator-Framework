@@ -10,23 +10,33 @@ spec:
   selector:
     app.kubernetes.io/name: game-init
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: game-init
+  namespace: default  
   labels:
     app.kubernetes.io/name: game-init
 spec:
-  containers:
-    - image: michwoj01/ecsb:game-init
-      name: game-init
-      ports:
-        - containerPort: 2136
-      volumeMounts:
-        - mountPath: /assets
-          name: game-init-assets
-  restartPolicy: OnFailure
-  volumes:
-    - name: game-init-assets
-      persistentVolumeClaim:
-        claimName: game-init-assets-pvc
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: game-init
+  template:
+    metadata: 
+      labels:
+        app.kubernetes.io/name: game-init
+    spec:
+      containers:
+        - image: michwoj01/ecsb:chat
+          name: game-init
+          ports:
+            - containerPort: 2136
+          volumeMounts:
+            - mountPath: /assets
+              name: game-init-assets
+      restartPolicy: Always
+      volumes:
+        - name: game-init-assets
+          persistentVolumeClaim:
+            claimName: game-init-assets-pvc

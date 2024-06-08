@@ -12,27 +12,37 @@ spec:
   selector:
     app.kubernetes.io/name: webapp
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: webapp
+  namespace: default
   labels:
     app.kubernetes.io/name: webapp
 spec:
-  containers:
-    - image: michwoj01/ecsb:webapp
-      name: webapp
-      ports:
-        - containerPort: 5173
-      env:
-        - name: "VITE_ECSB_MOVEMENT_WS_API_URL"
-          value: "ws://ecsb.com/moving"
-        - name: "VITE_ECSB_CHAT_WS_API_URL"
-          value: "ws://ecsb.com/chat"
-        - name: "VITE_ECSB_LOBBY_WS_API_URL"
-          value: "ws://ecsb.com/chat/landing"
-        - name: "VITE_ECSB_HTTP_AUTH_AND_MENAGEMENT_API_URL"
-          value: "http://ecsb.com/api"
-        - name: "VITE_ECSB_HTTP_SELF_INTERACTIONS_API_URL"
-          value: "http://ecsb.com/chat"
-  restartPolicy: Always
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+  template:
+    metadata: 
+      labels:
+        app.kubernetes.io/name: webapp
+    spec:
+      containers:
+        - image: michwoj01/ecsb:webapp
+          name: webapp
+          ports:
+            - containerPort: 5173
+          env:
+            - name: "VITE_ECSB_MOVEMENT_WS_API_URL"
+              value: "ws://ecsb.com/moving"
+            - name: "VITE_ECSB_CHAT_WS_API_URL"
+              value: "ws://ecsb.com/chat"
+            - name: "VITE_ECSB_LOBBY_WS_API_URL"
+              value: "ws://ecsb.com/chat/landing"
+            - name: "VITE_ECSB_HTTP_AUTH_AND_MENAGEMENT_API_URL"
+              value: "http://ecsb.com/api"
+            - name: "VITE_ECSB_HTTP_SELF_INTERACTIONS_API_URL"
+              value: "http://ecsb.com/chat"
+      restartPolicy: Always
