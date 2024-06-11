@@ -28,7 +28,7 @@ spec:
         app.kubernetes.io/name: game-init
     spec:
       containers:
-        - image: michwoj01/ecsb:chat
+        - image: michwoj01/ecsb:game-init
           name: game-init
           ports:
             - containerPort: 2136
