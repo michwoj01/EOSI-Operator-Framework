@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+data:
+  enabled-plugins: |
+    [rabbitmq_management,rabbitmq_sharding].
+  rabbitmq-conf: |
+    vm_memory_high_watermark.relative = 0.4
+    vm_memory_calculation_strategy = rss
+    loopback_users = none

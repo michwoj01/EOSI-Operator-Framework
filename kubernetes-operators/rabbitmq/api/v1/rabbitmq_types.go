@@ -21,26 +21,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // RabbitMQSpec defines the desired state of RabbitMQ
 type RabbitMQSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	Image   string                 `json:"image,omitempty"`
-	Config  string                 `json:"config,omitempty"`
-	Plugins string                 `json:"plugins,omitempty"`
-	Ports   []corev1.ContainerPort `json:"ports,omitempty"`
+	Containers    []corev1.Container   `json:"containers,omitempty"`
+	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
+	Volumes       []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 // RabbitMQStatus defines the observed state of RabbitMQ
 type RabbitMQStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	Nodes      []string           `json:"nodes,omitempty"`
 }
 
 //+kubebuilder:object:root=true

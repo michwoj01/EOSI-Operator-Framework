@@ -31,32 +31,100 @@ spec:
             description: RabbitMQSpec defines the desired state of RabbitMQ
             type: object
             properties:
-              image:
-                description: Docker image for the RabbitMQ instance
-                type: string
-              config:
-                description: RabbitMQ configuration file
-                type: string
-              plugins:
-                description: Enabled plugins for RabbitMQ
-                type: string
-              ports:
-                description: List of ports to expose from the RabbitMQ container
+              containers:
+                description: Containers for RabbitMQ instance
                 type: array
                 items:
                   type: object
                   properties:
-                    containerPort:
-                      description: Port to expose from the container
-                      type: integer
+                    image:
+                      description: Docker image for the container
+                      type: string
+                    name:
+                      description: Name of the container
+                      type: string
+                    ports:
+                      description: Ports to expose from the container
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          containerPort:
+                            description: Port to expose from the container
+                            type: integer
+                    volumeMounts:
+                      description: Volume mounts for the container
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          mountPath:
+                            description: Path to mount the volume
+                            type: string
+                          name:
+                            description: Name of the volume
+                            type: string
+              restartPolicy:
+                description: Restart policy for RabbitMQ pods
+                type: string
+              volumes:
+                description: Volumes for RabbitMQ instance
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      description: Name of the volume
+                      type: string
+                    configMap:
+                      description: ConfigMap for the volume
+                      type: object
+                      properties:
+                        name:
+                          description: Name of the ConfigMap
+                          type: string
+                        items:
+                          description: Items to project from the ConfigMap
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                description: Key to project
+                                type: string
+                              path:
+                                description: Path to project the key
+                                type: string
             required:
-              - image
-              - config
-              - plugins
+              - containers
+              - restartPolicy
+              - volumes
           status:
             description: RabbitMQStatus defines the observed state of RabbitMQ
             type: object
             properties:
+              conditions:
+                description: Conditions describe the state of the RabbitMQ instance
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      description: Type of the condition
+                      type: string
+                    status:
+                      description: Status of the condition
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated
+                      type: string
+                      format: date-time
+                    reason:
+                      description: Reason for the condition's last transition
+                      type: string
+                    message:
+                      description: Human-readable message indicating details about last transition
+                      type: string
               nodes:
                 description: 'Nodes is the list of RabbitMQ pods'
                 type: array
