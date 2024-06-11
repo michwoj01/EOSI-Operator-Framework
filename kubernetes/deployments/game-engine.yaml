@@ -16,6 +16,6 @@ spec:
         app.kubernetes.io/name: game-engine
     spec:
       containers:
-        - image: michwoj01/ecsb:chat
+        - image: michwoj01/ecsb:game-engine
           name: game-engine
       restartPolicy: Always
