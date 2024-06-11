@@ -33,7 +33,7 @@ spec:
       serviceAccountName: redis-operator-sa
       containers:
         - name: operator
-          image: domkvv/redis-operator:v1.0.0
+          image: matipl01/redis-operator:v1.0.0
           ports:
             - name: "management"
               containerPort: 8001
