@@ -4,9 +4,9 @@ metadata:
   name: redis-operator-cr
 rules:
 - apiGroups: 
-  - "my.domain"
+  - my.domain
   resources: 
-  - "redis"
+  - redis
   verbs: 
   - get
   - list
@@ -16,9 +16,9 @@ rules:
   - patch
   - delete
 - apiGroups: 
-  - "my.domain"
+  - my.domain
   resources: 
-  - "redis/status"
+  - redis/status
   verbs: 
   - get
   - update

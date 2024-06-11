@@ -3,8 +3,9 @@ kind: ConfigMap
 metadata:
   name: rabbitmq-config
 data:
-  enabled-plugins: "[rabbitmq_management,rabbitmq_sharding]."
+  enabled-plugins: |
+    [rabbitmq_management,rabbitmq_sharding].
   rabbitmq-conf: |
     vm_memory_high_watermark.relative = 0.4
     vm_memory_calculation_strategy = rss
-# TODO above configuration files need to be placed inside rabbitmq pods
+    loopback_users = none

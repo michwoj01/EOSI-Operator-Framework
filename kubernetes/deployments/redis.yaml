@@ -13,7 +13,7 @@ spec:
       port: 6379
       targetPort: 6379
   selector:
-    app.kubernetes.io/name: redis
+    app: redis
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -47,15 +47,17 @@ spec:
 apiVersion: my.domain/v1
 kind: Redis
 metadata:
+  name: redis
+  namespace: default
   labels:
     app.kubernetes.io/name: redis
     app.kubernetes.io/instance: redis
     app.kubernetes.io/part-of: kubernetes-operators
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: kubernetes-operators
-  name: redis
+    app: redis
 spec:
-  dataPvcName: "redis-cache-pvc"
+  size: 1
   image: redis/redis-stack
   port: 6379
-  size: 1
+  dataPvcName: "redis-cache-pvc"
