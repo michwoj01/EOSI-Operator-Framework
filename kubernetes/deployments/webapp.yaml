@@ -34,13 +34,13 @@ spec:
             - containerPort: 5173
           env:
             - name: "VITE_ECSB_MOVEMENT_WS_API_URL"
-              value: "ws://ecsb.com/moving"
+              value: "ws://ecsb.agh.edu.pl/moving"
             - name: "VITE_ECSB_CHAT_WS_API_URL"
-              value: "ws://ecsb.com/chat"
+              value: "ws://ecsb.agh.edu.pl/chat"
             - name: "VITE_ECSB_LOBBY_WS_API_URL"
-              value: "ws://ecsb.com/chat/landing"
+              value: "ws://ecsb.agh.edu.pl/chat/landing"
             - name: "VITE_ECSB_HTTP_AUTH_AND_MENAGEMENT_API_URL"
-              value: "http://ecsb.com/api"
+              value: "http://ecsb.agh.edu.pl/api"
             - name: "VITE_ECSB_HTTP_SELF_INTERACTIONS_API_URL"
-              value: "http://ecsb.com/chat"
+              value: "http://ecsb.agh.edu.pl/chat"
       restartPolicy: Always

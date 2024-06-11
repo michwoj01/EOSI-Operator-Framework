@@ -8,7 +8,7 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
 spec:
   rules:
-    - host: ecsb.com
+    - host: ecsb.agh.edu.pl
       http:
         paths:
           - path: /
