@@ -26,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	// "sigs.k8s.io/controller-runtime/pkg/controller"
@@ -47,16 +47,6 @@ type RedisReconciler struct {
 //+kubebuilder:rbac:groups=my.domain,resources=redis,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=my.domain,resources=redis/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=my.domain,resources=redis/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Redis object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 
 func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Create a logger with context specific to this reconcile loop
@@ -220,10 +210,10 @@ func (r *RedisReconciler) newPodForCR(cr *mydomainv1.Redis) *corev1.Pod {
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-            Name:      cr.Name,
-            Namespace: cr.Namespace,
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
 			Labels:    labels,
-        },
+		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
 				Name:  "redis",
@@ -236,7 +226,7 @@ func (r *RedisReconciler) newPodForCR(cr *mydomainv1.Redis) *corev1.Pod {
 				VolumeMounts: volumeMounts,
 			}},
 			Volumes: volumes,
-        },
+		},
 	}
 }
 
