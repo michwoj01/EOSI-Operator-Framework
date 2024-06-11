@@ -13,7 +13,7 @@ spec:
       port: 6379
       targetPort: 6379
   selector:
-    app: redis
+    app.kubernetes.io/name: redis
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,7 +30,7 @@ spec:
       labels:
         app.kubernetes.io/name: redis-operator
     spec:
-      serviceAccountName: redis-operator-sa
+      serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
           image: matipl01/redis-operator:v1.0.0

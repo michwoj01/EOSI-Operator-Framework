@@ -11,7 +11,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: game-engine
   template:
-    metadata: 
+    metadata:
       labels:
         app.kubernetes.io/name: game-engine
     spec:

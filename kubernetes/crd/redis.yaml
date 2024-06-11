@@ -1,11 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
-  name: redis.my.domain
+  name: redis.kubernetes-operators.pl.edu.agh
 spec:
-  group: my.domain
+  group: kubernetes-operators.pl.edu.agh
   names:
     kind: Redis
     listKind: RedisList
@@ -13,57 +11,51 @@ spec:
     singular: redis
   scope: Namespaced
   versions:
-  - name: v1
-    served: true
-    storage: true
-    schema:
-      openAPIV3Schema:
-        description: Redis is the Schema for the redis API
-        type: object
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: RedisSpec defines the desired state of Redis
-            type: object
-            properties:
-              size:
-                description: Number of Redis instances
-                format: int32
-                type: integer
-              image:
-                description: Docker image for the Redis instance
-                type: string
-              port:
-                description: Port for the database
-                format: int32
-                type: integer
-              dataPvcName:
-                description: Name of the PVC that will be used for the database data
-                type: string
-            required:
-            - size
-            - image
-            - port
-            - dataPvcName
-          status:
-            description: RedisStatus defines the observed state of Redis
-            type: object
-            properties:
-              nodes:
-                description: 'Nodes is the list of Redis pods'
-                type: array
-                items:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: Redis is the Schema for the redis API
+          type: object
+          properties:
+            apiVersion:
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              type: string
+            kind:
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: RedisSpec defines the desired state of Redis
+              type: object
+              properties:
+                size:
+                  description: Number of Redis instances
+                  type: integer
+                image:
+                  description: Docker image for the Redis instance
                   type: string
-    subresources:
-      status: {}
+                port:
+                  description: Port for the database
+                  type: integer
+                dataPvcName:
+                  description: Name of the PVC that will be used for the database data
+                  type: string
+              required:
+                - size
+                - image
+                - port
+                - dataPvcName
+            status:
+              description: RedisStatus defines the observed state of Redis
+              type: object
+              properties:
+                nodes:
+                  description: "Nodes is the list of Redis pods"
+                  type: array
+                  items:
+                    type: string
+      subresources:
+        status: {}

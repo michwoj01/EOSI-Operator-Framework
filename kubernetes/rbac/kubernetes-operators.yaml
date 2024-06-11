@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubernetes-operators-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubernetes-operators-cr
+rules:
+  - apiGroups:
+      - kubernetes-operators.pl.edu.agh
+    resources:
+      - postgres
+      - rabbitmqs
+      - redis
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - kubernetes-operators.pl.edu.agh
+    resources:
+      - postgres/status
+      - rabbitmqs/status
+      - redis/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - pods
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-operators-crb
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-operators-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: kubernetes-operators-cr
+  apiGroup: rbac.authorization.k8s.io
