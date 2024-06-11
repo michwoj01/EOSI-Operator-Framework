@@ -15,24 +15,47 @@ spec:
   selector:
     app.kubernetes.io/name: redis
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: redis
+  name: redis-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis-operator
+    spec:
+      serviceAccountName: redis-operator-sa
+      containers:
+        - name: operator
+          image: matipl01/redis-operator:v1.0.0
+          ports:
+            - name: "management"
+              containerPort: 8001
+            - name: "connections"
+              containerPort: 6379
+          args:
+            - "--zap-log-level=debug"
+            - "--zap-stacktrace-level=info"
+            - "--zap-encoder=console"
+---
+apiVersion: my.domain/v1
+kind: Redis
+metadata:
   labels:
     app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: redis
+    app.kubernetes.io/part-of: kubernetes-operators
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-operators
+  name: redis
 spec:
-  containers:
-    - image: redis/redis-stack
-      name: redis
-      ports:
-        - containerPort: 8001
-        - containerPort: 6379
-      volumeMounts:
-        - mountPath: /redis_data
-          name: redis-cache
-  restartPolicy: OnFailure
-  volumes:
-    - name: redis-cache
-      persistentVolumeClaim:
-        claimName: redis-cache-pvc
+  dataPvcName: "redis-cache-pvc"
+  image: redis/redis-stack
+  port: 6379
+  size: 1

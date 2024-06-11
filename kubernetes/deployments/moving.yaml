@@ -10,16 +10,26 @@ spec:
   selector:
     app.kubernetes.io/name: moving
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: moving
+  namespace: default
   labels:
     app.kubernetes.io/name: moving
 spec:
-  containers:
-    - image: michwoj01/ecsb:moving
-      name: moving
-      ports:
-        - containerPort: 8085
-  restartPolicy: OnFailure
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: moving
+  template:
+    metadata: 
+      labels:
+        app.kubernetes.io/name: moving
+    spec:
+      containers:
+        - image: michwoj01/ecsb:moving
+          name: moving
+          ports:
+            - containerPort: 8085
+      restartPolicy: Always

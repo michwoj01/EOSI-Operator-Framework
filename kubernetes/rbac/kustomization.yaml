@@ -4,6 +4,9 @@ resources:
   - postgres-service-account.yaml
   - postgres-cluster-role.yaml
   - postgres-cluster-role-binding.yaml
+  - redis-service-account.yaml
+  - redis-cluster-role.yaml
+  - redis-cluster-role-binding.yaml
   - rabbitmq-service-account.yaml
   - rabbitmq-cluster-role.yaml
   - rabbitmq-cluster-role-binding.yaml

@@ -19,7 +19,7 @@
 \usepackage{listings}
 \usepackage[ruled,linesnumbered,lined]{algorithm2e}
 \usepackage[bookmarks=false]{hyperref}
-
+\usepackage{float}
 \hypersetup{colorlinks,
   linkcolor=blue,
   citecolor=blue,
@@ -124,7 +124,7 @@ backend=biber]{biblatex}
 
 Kubernetes to niekwestionowany lider w segmencie automatyzacji i orkiestracji aplikacji kontenerowych, pełniąc kluczową rolę w skalowalnym wdrażaniu oprogramowania na infrastrukturę sieciową. Doskonale wpisuje się w trend zastępowania architektur monolitycznych przez mikroserwisy, które znacząco zwiększają reaktywność i elastyczność systemów informatycznych. Istnieje jednakże pewien podzbiór aplikacji, dla którego pojawiają się wyzwania związane z automatyzacją ich obsługi, zwłaszcza w sytuacji awarii lub dynamicznego zwiększania obciążenia. Opisane aplikacje, to oprogramowanie typu \textit{stateful}, takie jak bazy danych (Postgres, MySQL, Redis), middleware (RabbitMQ) czy systemy monitorowania (Prometheus), których stan jest krytyczny dla ciągłości działania i nie może zostać utracony w przypadku awarii.
 
-\begin{figure}[h!]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=1\linewidth]{resources/stateful_apps.png}
     \caption{Przykładowe aplikacje typu stateful}
@@ -159,16 +159,16 @@ W przypadku wyłącznie prezentacji działania Operatora na klastrze Kuberneteso
 \section{Przykład aplikacji typu stateful}
 Aplikacją, na której pokażemy działanie Operatora, będzie Elektroniczna Chłopska Szkoła Biznesu (eCSB), cyfrowa implementacja gry planszowej 'Chłopska Szkoła Biznesu' wydanej przez Małopolski Instytut Kultury. Aplikacja ta jest pracą inżynierską czworga studentów naszego Wydziału, obecnie kontynuowaną w ramach pracy magisterskiej. Gra polega na produkcji zasobów według przydzielonego zawodu, handlu towarami, zakładaniu spółek oraz odbywaniu wypraw w celu korzystniej wymiany produktów na pieniądze. W czasie kilkunastominutowej rozgrywki każdy z graczy stara się zgromadzić jak największy majątek.
 
-\begin{figure}[h!]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=1\linewidth]{resources/game_1.png}
     \caption{Ekran powitalny ECSB}
-    \label{fig:stateful}
+    \label{fig:ecsb}
 \end{figure}
 
 eCSB jest aplikacją webową opartą o mikroserwisy oraz komunikację z wykorzystaniem wiadomości. W minimalnym wariancie składa się z 6 bezstanowych modułów napisanych w języku Kotlin, podłączonych do bazy danych Postgres, bazy klucz-wartość Redis oraz brokera wiadomości RabbitMQ, a także aplikacji webowej, komunikującej się z modułami poprzez protokoły REST oraz WebSocket. Dostęp do wszystkich elementów architektury realizowany jest dzięki serwerowi HTTP nginx, który pełni rolę reverse-proxy (zapewniając przy tym certyfikaty SSL i ruch HTTPS) oraz API gateway (przekierowując żądania do odpowiednich mikroserwisów). Pełna architektura rozwiązania przedstawiona jest poniżej \ref{fig:schema}.
 
-\begin{figure}[h!]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{resources/ecsb-schema.png}
     \caption{Architektura projektu eCSB}
@@ -182,7 +182,7 @@ Warto dodać, że niektóre z modułów zostały zaprojektowane z myślą o skal
 
 Naszym scenariuszem, poprzez który zademonstrujemy działanie Operatora dla aplikacji eCSB, będą następujące operacje:
 
-\begin{enumerate}
+\begin{enumerate}\label{scenario}
     \item uruchomienie klastra Kubernetesowego z minimalnym wariantem eCSB (5 modułów - pomijamy moduł ecsb-anal, który służył jedynie do zbierania danych analitycznych)
     \item potrojenie skalowalnych modułów (moving, chat, game-engine), a następnie powrót do wariantu minimalnego
     \item przywrócenie centralnego modułu po awarii (timer lub game-init)
@@ -193,65 +193,66 @@ Naszym scenariuszem, poprzez który zademonstrujemy działanie Operatora dla apl
 \chapter{\ChapterTitleSolutionArchitecture}
 \label{sec:architektura}
 
-\begin{figure}[h!]
+\begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{resources/architecture_diagram.png}
     \caption{Diagram architektury rozwiązania z wykorzystaniem Kubernetesa}
-    \label{fig:schema}
+    \label{fig:architecture}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Konfiguracja środowiska}
 \label{sec:konfiguracja-srodowiska}
 
-Jako punkt wyjścia konfiguracji projektu został wyznaczony zmodyfikowany plik \texttt{docker-compose.yml}, za pomocą którego uruchamiane było middleware dla aplikacji backendowych oraz aplikacja webowa. Plik ten został rozszerzony o backendowe mikroserwisy oraz dodano wstępną konfigurację dla PostgreSQL oraz RabbitMQ:
+\section{Konfiguracja w Docker Compose}
+
+Jako punkt wyjścia konfiguracji projektu został wyznaczony zmodyfikowany plik \texttt{docker-compose.yml}, za pomocą którego uruchamiane było middleware dla aplikacji backendowych oraz aplikacja webowa. Plik ten został rozszerzony o backendowe mikroserwisy oraz dodano wstępną konfigurację dla PostgreSQL, oraz RabbitMQ:
 
 \begin{lstlisting}[caption=Przykład pliku Dockerfile dla mikroserwisu]
 FROM gradle:7-jdk11 AS build
 COPY .. /home/gradle/ecsb-backend
 WORKDIR /home/gradle/ecsb-backend
-RUN gradle :ecsb-game-engine:buildFatJar --no-daemon
+RUN gradle :ecsb-chat:buildFatJar --no-daemon
 
-FROM openjdk:11
-WORKDIR /home/gradle/ecsb-backend
-RUN mkdir /app
-COPY --from=build /home/gradle/ecsb-backend/ecsb-game-engine/build/libs/*.jar /app/ecsb-game-engine.jar
-ENTRYPOINT ["java", "-jar", "/app/ecsb-game-engine.jar"]
+FROM openjdk:11-jre-slim
+EXPOSE 2138
+WORKDIR /app
+COPY --from=build /home/gradle/ecsb-backend/ecsb-chat/build/libs/*.jar /app/ecsb-chat.jar
+ENTRYPOINT ["java", "-jar", "/app/ecsb-chat.jar"]
 \end{lstlisting}
 
 \begin{lstlisting}[caption=Przykładowa definicja kontenera mikroserwisu w pliku docker-compose.yml]
-game-engine:
-    container_name: game-engine
+  moving:
+    container_name: moving
+    image: michwoj01/ecsb:moving
     build:
       context: ecsb-backend
-      dockerfile: ./ecsb-game-engine/Dockerfile
+      dockerfile: ./ecsb-moving/Dockerfile
     depends_on:
       - postgres
       - redis
       - rabbitmq
-      - chat
     restart: on-failure
+    ports:
+      - '8085:8085'
+    networks:
+      - my_network
 \end{lstlisting}
+\newpage
 
-Mając z grubsza zdefiniowane kontenery składające się na architekturę, następnym krokiem było opakowanie ich w Kubernetesowe serwisy oraz konfiguracja zmiennych środowiskowych.
+Przy okazji konfiguracji w Docker Compose pojawił się problem w postaci bardzo długiego budowania obrazów serwisów eCSB (ponad 6 minut), dlatego, uwzględniając fakt, że może się zmienić jedynie ich konfiguracja, założyliśmy repozytorium na DockerHub, gdzie wrzuciliśmy wszystkie obrazy eCSB, aby były dostępne do pobrania dla wszystkich członków zespołu. Przy okazji odchudziliśmy bazowe obrazy (openjdk:11 -> openjdk:11-jre-slim).
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{resources/docker_hub.PNG}
+    \caption{Repozytorium obrazów na DockerHub}
+    \label{fig:dockerhub}
+\end{figure}
 
 \section{Konfiguracja w Kubernetes}
+Mając z grubsza zdefiniowane kontenery składające się na architekturę, następnym krokiem było opakowanie ich w Kubernetesowe serwisy oraz konfiguracja zmiennych środowiskowych. 
 
-W celu przeniesienia konfiguracji do Kubernetes, należy stworzyć odpowiednie pliki YAML definiujące zasoby takie jak ConfigMap, Pod, Deployment, Service oraz PersistentVolumeClaim. Przykładowe pliki konfiguracyjne:
-
-\subsection{ConfigMap dla RabbitMQ}
-
-\begin{lstlisting}[caption=ConfigMap dla RabbitMQ]
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: rabbitmq
-data:
-  enabled-plugins: "[rabbitmq_management,rabbitmq_sharding]."
-  rabbitmq-conf: |
-    vm_memory_high_watermark.relative = 0.4
-    vm_memory_calculation_strategy = rss
-\end{lstlisting}
+W celu przeniesienia konfiguracji do Kubernetes należało stworzyć odpowiednie pliki YAML definiujące zasoby takie jak ConfigMap, Pod, Deployment, Service oraz PersistentVolumeClaim. Przykładowe pliki konfiguracyjne:
 
 \subsection{Pod dla mikroserwisu}
 
@@ -268,53 +269,37 @@ spec:
       name: chat
       ports:
         - containerPort: 2138
-      resources: {}
   restartPolicy: OnFailure
-status: {}
 \end{lstlisting}
 
-\subsection{Deployment dla RabbitMQ}
+\subsection{Deployment dla PostgreSQL}
 
-\begin{lstlisting}[caption=Deployment dla RabbitMQ]
+\begin{lstlisting}[caption=Deployment dla PostgreSQL]
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq
-  labels:
-    app.kubernetes.io/name: rabbitmq
+  name: postgres-operator
+  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: rabbitmq
-  strategy:
-    type: Recreate
+      app.kubernetes.io/name: postgres-operator
   template:
-    metadata: 
+    metadata:
       labels:
-        app.kubernetes.io/name: rabbitmq
+        app.kubernetes.io/name: postgres-operator
     spec:
+      serviceAccountName: postgres-operator-sa
       containers:
-        - image: rabbitmq:3.12-management
-          name: rabbitmq
+        - name: operator
+          image: matipl01/ecsb-postgres-operator:v1.0.0
           ports:
-            - containerPort: 15672
-            - containerPort: 5672
-          resources: {}
-          volumeMounts:
-            - mountPath: /etc/rabbitmq/
-              name: rabbitmq
-      restartPolicy: Always
-      volumes:
-        - name: rabbitmq
-          configMap:
-            name: rabbitmq
-            items:
-            - key: rabbitmq-conf
-              path: rabbitmq.conf
-            - key: enabled-plugins
-              path: enabled_plugins
-status: {}
+            - containerPort: 5432
+          args:
+            - "--zap-log-level=debug"
+            - "--zap-stacktrace-level=info"
+            - "--zap-encoder=console"
 \end{lstlisting}
 
 \subsection{Service dla PostgreSQL}
@@ -326,13 +311,11 @@ metadata:
   name: postgres
 spec:
   ports:
-    - name: "5432"
+    - protocol: TCP
       port: 5432
       targetPort: 5432
   selector:
-    app.kubernetes.io/name: postgres
-status:
-  loadBalancer: {}
+    app: postgres
 \end{lstlisting}
 
 \subsection{PersistentVolumeClaim dla PostgreSQL}
@@ -341,21 +324,35 @@ status:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-claim0
+  name: postgres-data-pvc
+  namespace: default
+  labels:
+    app.kubernetes.io/name: postgres
 spec:
+  storageClassName: local-storage
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Mi
-status: {}
+      storage: 1Gi
 \end{lstlisting}
 
 Konfiguracja w Kubernetes pozwala na zarządzanie mikroserwisami w bardziej skalowalny i elastyczny sposób, umożliwiając dynamiczne skalowanie, zarządzanie stanem aplikacji oraz łatwiejszą integrację z innymi komponentami systemu. Wszystkie pliki konfiguracyjne YAML powinny być umieszczone w odpowiednim katalogu (np. \texttt{kubernetes}), aby można było łatwo zastosować je w klastrze Kubernetes.
 
+\section{Operator Framework dla middleware}
+TODO
+
+\section{Napotkane problemy}
+\par Jednymi z najistotniejszych elementów konfiguracji poza zwykłym zdefiniowaniem plików YAMLowych okazały się:
+\begin{itemize}
+    \item skrypty bazodanowe — Postgres oprócz tworzenia i obsługi instancji wymagał dostępu do skryptów bazodanowych, które tworzyły wszystkie potrzebne tabele. Oprócz zamontowania wolumenów w klastrze Minikube potrzebne było również przekopiowanie samych skryptów do środka klastra, aby pody mogły z nich korzystać przy inicjalizacji. Niestety okazało się, że ten sposób przekazania skryptów nie może być zautomatyzowany, stąd skorzystaliśmy z przekształcenia skryptów do ConfigMap i przekazania ich jako parametry startowe podów Postgresa.
+    \item dane Postgresa i Redisa — persystencja na lokalnym klastrze nie jest najlepszym rozwiązaniem (jeśli Minikube odmówi posłuszeństwa, dane przepadną), niemniej pojedyncze pody bywają jeszcze bardziej zawodne. Zamontowanie wolumenów zarówno dla danych statycznych (Postgres) jak i dynamicznych (Redis) było oczywistością.
+    \item konfiguracja RabbitMQ — okazało się, że przekazanie plików konfiguracyjnych poprzez zamontowanie ConfigMap spowodowało błędy poda (oczywiście nigdzie nielogowane), które uniemożliwiały podłączenie się serwisów. Konieczne stało się w tym przypadku zastosowanie Operator Framework, aby inicjalizować pody RabbitMQ z odpowiednimi pluginami.
+    \item zasoby potrzebne do stworzenia gry — jeden z modułów Chłopskiej Szkoły Biznesu wymagał zapisywania oraz odczytywania plików .jpg, będących elementami mapy lub grafikami postaci. Również w tym przypadku konieczne było zastosowanie persystentnego wolumenu wewnątrz klastra.
+\end{itemize}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\ChapterTitleInstallMethod}
-\label{sec:instalacja}
+\chapter{\ChapterTitleInstallMethod} \label{sec:instalacja}
 
 \section{Instalacja niezbędnych narzędzi}
 
@@ -370,29 +367,33 @@ Konfiguracja w Kubernetes pozwala na zarządzanie mikroserwisami w bardziej skal
     \item Należy przejść na stronę \href{https://minikube.sigs.k8s.io/docs/start/}{Minikube} i pobrać odpowiednią wersję dla systemu operacyjnego, a następnie postępować zgodnie z krokami instalacji opisanymi w na załączonej stronie internetowej.
     \item Uruchomienie Minikube:
 \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube start\end{lstlisting}
+minikube start\end{lstlisting}\vspace{-20pt}
   \end{enumerate}
 \end{enumerate}
 
 \section{Uruchomienie aplikacji na Kubernetes}
 
 \begin{enumerate}
-  \item \textbf{Zastosowanie wszystkich plików konfiguracyjnych Kubernetes}:
+  \item \textbf{Pobranie repozytorium z rozwiązaniem}:
   \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- apply -f kubernetes -R\end{lstlisting}
-  Jeżeli napotkano błąd \texttt{error looking up service account default/default: serviceaccount "default" not found}, ponowne uruchomienie powyższej komendy.
-
-  \item \textbf{Sprawdzenie statusu}:
+ git clone git@github.com:michwoj01/EOSI-Operator-Framework.git
+ cd EOSI-Operator-Framework\end{lstlisting}\vspace{-20pt}
+  \item \textbf{Zastosowanie wszystkich plików konfiguracyjnych Kubernetes oraz Custom Resource Definition}:
   \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- get pods\end{lstlisting}
+ cd kubernetes && ./deploy.sh\end{lstlisting}\vspace{-20pt}
+  Jeżeli napotkano błąd \texttt{error looking up service account default/default: serviceaccount "default" not found}, należy ponownie uruchomić powyższą komendę.
+  \item \textbf{Sprawdzenie statusu stworzonych elementów}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+kubectl get all\end{lstlisting}\vspace{-20pt}
 \end{enumerate}
 
 \section{Debugowanie}
 
-W przypadku problemów, sprawdzenie logów podów:
+W przypadku problemów, sprawdzenie statusu lub logów podów:
 \begin{quote}
 \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- logs <pod-name>
+kubectl describe <pod-name>
+kubectl logs <pod-name>
 \end{lstlisting}
 \end{quote}
 
@@ -404,60 +405,215 @@ W tym rozdziale opisany jest proces odtworzenia całego rozwiązania krok po kro
 
 \section{Infrastructure as Code (IaC) - Podejście}
 
-Infrastructure as Code (IaC) to praktyka zarządzania infrastrukturą IT przy użyciu kodu, co pozwala na automatyzację procesów wdrożeniowych oraz łatwe zarządzanie środowiskiem. W naszym projekcie wykorzystujemy Kubernetes do zarządzania kontenerami oraz Docker do budowy obrazów kontenerów.
+Infrastructure as Code (IaC) to praktyka zarządzania infrastrukturą IT przy użyciu kodu, co pozwala na automatyzację procesów wdrożeniowych oraz łatwe zarządzanie środowiskiem. W naszym projekcie wykorzystujemy Kubernetes do zarządzania kontenerami oraz Docker do budowy obrazów kontenerów. W celu zapewnienia infrastruktury dla naszego rozwiązania skorzystaliśmy z lokalnego klastra Minikube, w związku z czym nie było potrzeby korzystać z narzędzi typu Terraform.
 
 \section{Kroki odtworzenia rozwiązania}
 
 \begin{enumerate}
     \item \textbf{Instalacja narzędzi}:
-    Na wstępie należy zainstalować niezbędne narzędzia, takie jak Docker, Minikube oraz kubectl zgodnie z instrukcjami podanymi w rozdziale dotyczącym instalacji.
+    Na wstępie należy zainstalować niezbędne narzędzia, takie jak Docker, Minikube oraz kubectl zgodnie z instrukcjami podanymi w rozdziale dotyczącym instalacji, a także pobrać repozytorium i uruchomić konfigurację projektu. Dokładniej opisane jest to w rozdziale \ref{sec:instalacja}.
 
-    \item \textbf{Klonowanie repozytorium projektu}:
-    Aby rozpocząć pracę, należy sklonować repozytorium projektu zawierające wszystkie niezbędne pliki konfiguracyjne i kody źródłowe:
-
+    \item \textbf{Dostęp do aplikacji webowej}:
+    Po poprawnym uruchomieniu wszystkich usług, aplikacja webowa powinna być dostępna. Minikube dostarcza polecenie, które pozwala na dostęp do usług zewnętrznych poprzez otwarcie odpowiednich portów:
 \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-git clone https://github.com/michwoj01/EOSI-Operator-Framework.git
-cd EOSI-Operator-Framework\end{lstlisting}
-
-    \item \textbf{Budowanie obrazów z wykorzystaniem Dockera}:
-    Następnie, należy zbudować obrazy Docker dla wszystkich mikroserwisów zgodnie z konfiguracją zawartą w docker-compose.yml.
-
-    \item \textbf{Zastosowanie konfiguracji Kubernetesa}:
-    Wszystkie pliki konfiguracyjne Kubernetes znajdują się w katalogu \texttt{kubernetes}. Aby zastosować te konfiguracje, używamy komendy:
-
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- apply -f kubernetes -R\end{lstlisting}
-
-    \item \textbf{Konfiguracja RabbitMQ i PostgreSQL}:
-    RabbitMQ jest konfigurowany przy użyciu ConfigMap, a PostgreSQL przy użyciu PersistentVolumeClaim, aby zapewnić trwałe przechowywanie danych. Szczegóły konfiguracji znajdują się w odpowiednich plikach YAML.
-
-    \item \textbf{Tworzenie podów i usług}:
-    Konfiguracja podów i usług dla wszystkich komponentów aplikacji (mikroserwisów, baz danych, kolejek) jest zdefiniowana w plikach YAML. Każdy plik definiuje specyfikację dla odpowiedniego komponentu, w tym zmienne środowiskowe, porty i zależności.
-
-    \item \textbf{Sprawdzenie stanu klastra}:
-    Po zastosowaniu konfiguracji, należy sprawdzić status uruchomionych podów, aby upewnić się, że wszystkie komponenty zostały poprawnie wdrożone:
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- get pods\end{lstlisting}
-
-    \item \textbf{Debugowanie}:
-    W przypadku problemów, logi podów mogą dostarczyć niezbędnych informacji do diagnozowania i rozwiązywania problemów:
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube kubectl -- logs <pod-name>\end{lstlisting}
-
-    \item \textbf{Dostęp do aplikacji}:
-    Po poprawnym uruchomieniu wszystkich usług, aplikacja powinna być dostępna. Minikube dostarcza polecenie, które pozwala na dostęp do usług zewnętrznych poprzez otwarcie odpowiednich portów:
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube service <service-name>\end{lstlisting}
+minikube service webapp\end{lstlisting}\vspace{-20pt}
+Następnie powinien otworzyć się tunel między klastrem Minikube a naszym lokalnym hostem i serwis aplikacji webowej powinien być dostępny lokalnie pod wyszczególnionym portem:
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{resources/webapp expose.PNG}
+    \caption{Otworzenie tunelu między Minikube a naszym hostem}
+    \label{fig:tunel}
+\end{figure}
+\newpage
+    \item \textbf{Zmiana liczebności skalowalnych serwisów}:
+    Każdy serwis eCSB, który dzięki zastosowaniu shardingu jest możliwy do skalowania, możemy kontrolować za pomocą deklaracji Deploymentów. Dla przykładu możemy zwiększyć liczbę podów serwisu moving zmieniając parametr ilości replik:
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.6\linewidth]{resources/moving_replicas.PNG}
+    \caption{Zmiana liczby podów serwisu moving}
+    \label{fig:scaling}
+\end{figure} 
+    \item \textbf{Dostosowywanie się middleware do obciążenia}:
+     Użycie Operator Framework do kontroli Postgresa umożliwia tworzenie replik jego instancji w miarę zwiększania się ilości serwisów (pojedyncza instancja Postgres ma ograniczoną liczbę dozwolonych połączeń):
+    TODO
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleDemoDeployment}
 \label{sec:deployment}
+Mając środowisko minikube i aplikację w Kubernetes, dla odpowiednich serwisów (PostgreSQL, Redis, RabbitMQ) wprowadzeni zostali operatorzy utworzeni przy użyciu Operator Framework bazującym na Go.
 
+\begin{enumerate}
+    \item \textbf{Utworzenie repozytorium Operatora}: \verb|operator-sdk| automatycznie generuje projekt z bazowymi plikami do modyfikacji
+    \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+ $ operator-sdk init\end{lstlisting}
+\vspace{-20pt}
+   \item \textbf{Stworzenie API oraz kontrolera}:
+   również jest generowany bazowy kod dla resource API oraz kontrolera, np. dla PostgreSQL są to - \verb|postgres_types.go| oraz \verb|postgres_controller.go|, które następnie są dostosowywane do pożądanej funkcjonalności.
+   \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+$ operator-sdk create api \
+    --version=v1 \\end{lstlisting}
+
+%     \begin{lstlisting}[caption=fragment kontrolera dla PostgreSQL]
+% type Postgres struct {
+% 	metav1.TypeMeta   `json:",inline"`
+% 	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+% 	Spec   PostgresSpec   `json:"spec,omitempty"`
+% 	Status PostgresStatus `json:"status,omitempty"`
+% }
+%     \end{lstlisting}
+    
+   Controller (kontroler) jest częścią Kubernetesa gdzie znajduje się logika Operatora. Za każdym razem gdy pojawia się jakaś zmiana na obserwowanym zasobie, funkcja \verb|Reconcile| ma doprowadzić aby aktualny stan CR (CustomResource) odpowiadał pożądanemu stanowi systemu. Dodatkowo, dzięki funkcji \verb|SetupWithManager()| zarządzamy zasobami pod kontrolerem oraz konfiguracjami.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{image.png}
+        \caption{Schemat działania kontrolera\cite{hausenblas2019programming}}
+        \label{fig:enter-label}
+    \end{figure}
+   
+    \begin{lstlisting}[caption=fragment kontrolera dla PostgreSQL]
+    func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    	// Create a logger with context specific to this reconcile loop
+    	logger := r.Log.WithValues("namespace", req.Namespace, "postgres", req.Name)
+    	logger.Info("Reconciling Postgres instance")
+    
+    	// Fetch the Postgres instance
+    	logger.Info("Fetching Postgres instance")
+    	postgres := &databasev1.Postgres{}
+    	err := r.Get(ctx, req.NamespacedName, postgres)
+    	if err != nil {
+    		if errors.IsNotFound(err) {
+    			logger.Info("Postgres resource not found. Ignoring since object must be deleted")
+    			return ctrl.Result{}, nil
+    		}
+    		logger.Error(err, "Failed to get Postgres")
+    		return ctrl.Result{}, err
+    	}
+    
+    	// Ensure PVCs exist
+    	if err := r.ensurePVC(ctx, postgres.Spec.DataPvcName, postgres); err != nil {
+    		logger.Error(err, "Failed to ensure data PVC")
+    		return ctrl.Result{}, err
+    	}
+    
+    	// Check if the Pod already exists
+    	logger.Info("Checking if the Pod already exists")
+    	found := &corev1.Pod{}
+    	err = r.Get(ctx, types.NamespacedName{Name: postgres.Name, Namespace: postgres.Namespace}, found)
+    	if err != nil && errors.IsNotFound(err) {
+    		logger.Info("Pod does not exist, will create a new one")
+    		// Define a new Pod object
+    		logger.Info("Defining a new Pod object")
+    		pod := r.newPodForCR(postgres)
+    
+    		// Set Postgres instance as the owner and controller
+    		if err := controllerutil.SetControllerReference(postgres, pod, r.Scheme); err != nil {
+    			logger.Error(err, "Failed to set controller reference")
+    			return ctrl.Result{}, err
+    		}
+    
+    		err = r.Create(ctx, pod)
+    		if err != nil {
+    			logger.Error(err, "Failed to create new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
+    			return ctrl.Result{}, err
+    		}
+    		// Pod created successfully - return and requeue
+    		logger.Info("Pod created successfully")
+    		return ctrl.Result{Requeue: true}, nil
+    	} else if err != nil {
+    		logger.Error(err, "Failed to get Pod")
+    		return ctrl.Result{}, err
+    	} else {
+    		// If the Pod exists and is not managed by this operator, delete it
+    		if !metav1.IsControlledBy(found, postgres) {
+    			logger.Info("Found existing Pod not managed by this operator, deleting it", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+    			err = r.Delete(ctx, found)
+    			if err != nil {
+    				logger.Error(err, "Failed to delete existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+    				return ctrl.Result{}, err
+    			}
+    			logger.Info("Deleted existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+    			return ctrl.Result{Requeue: true}, nil
+    		}
+    		logger.Info("Pod already exists and is managed by this operator", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+    	}
+    
+    	// Update the Postgres status with the pod names
+    	logger.Info("Updating Postgres status with the pod names")
+    	podNames := []string{found.Name}
+    	if !reflect.DeepEqual(podNames, postgres.Status.Nodes) {
+    		postgres.Status.Nodes = podNames
+    		err := r.Status().Update(ctx, postgres)
+    		if err != nil {
+    			logger.Error(err, "Failed to update Postgres status")
+    			return ctrl.Result{}, err
+    		}
+    		logger.Info("Postgres status updated", "Status.Nodes", postgres.Status.Nodes)
+    	}
+    
+    	return ctrl.Result{}, nil
+    }
+\end{lstlisting}
+
+
+\item \textbf{Utworzenie CRD}: wygenerowanie CustomResourceDefinition, który Operator ma obserwować oraz nim zarządzać
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+$ make manifests\end{lstlisting}
+% \end{enumerate}
+
+\begin{lstlisting}[caption=Fragment CRD dla PostgreSQL]
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: postgres.database.pl.edu.agh
+spec:
+  group: database.pl.edu.agh
+  names:
+    kind: Postgres
+    listKind: PostgresList
+    plural: postgres
+    singular: postgres
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Postgres is the Schema for the postgres API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture
+              /api-conventions.md#resources'
+            type: string
+          kind:
+\end{lstlisting}
+
+\item \textbf{Uruchomienie Operatora}: lokalnie, przy podłączeniu do klastra Kubernetes
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+$ make install run\end{lstlisting}
+% \end{enumerate}
+
+    
+\end{enumerate}
+
+Po utworzeniu odpowiednich Operatorów oraz ich wdrożeniu na klastrze minikube można obserwować ich działanie dla naszego scenariusza \ref{scenario}.
+
+
+...
+
+
+[skriny scenariusza]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleSummary}
 \label{sec:podsumowanie}
 
+Operator Framework to przydatne narzędzie do orch
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -496,44 +652,7 @@ całego rysunku~\ref{fig:ex2}.
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-\subsection{Tabele}
-\label{sec:tabele}
 
-Przykładowa tabela~\ref{tab:ex1}.
-
-\begin{table}[!htbp]
-\centering
-\caption[Przykładowa tabela]{Przykładowa tabela}
-\begin{tabularx}{\columnwidth}{@{}YYYYYYY@{}} \toprule
-  & \multicolumn{2}{c}{\small\textbf{Best}} & \multicolumn{2}{c}{\small\textbf{Average}} & \multicolumn{2}{c}{\small\textbf{Worst}} \\ \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-  \textbf{No.} & \textbf{AB} & \textbf{CD} & \textbf{FE} & \textbf{GH} & \textbf{IJ} & \textbf{KL} \\ \midrule
-  \textit{1.} & 10 & 89 & 58 & 244 & 6 & 70 \\  
-  \textit{2.} & 15 & 87 & 57 & 147 & 4 & 82 \\
-  \textit{3.} & 23 & 45 & 55 & 151 & 2 & 38 \\
-  \textit{4.} & 34 & 90 & 55 & 246 & 1 & 82 \\
-  \textit{5.} & 56 & 75 & 54 & 255 & 0 & 73 \\ \bottomrule
-\end{tabularx}
-\label{tab:ex1}
-\end{table}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Wzory matematyczne}
-\label{sec:wzory}
-
-% poniższy tekst należy usunąć z finalnej wersji pracy.
-
-Przykład wzoru z odnośnikiem do literatury~\cite{author2021title}:
-
-\begin{equation}
-\Omega = \sum_{i=1}^n \gamma_i
-\label{eq:sum}
-\end{equation}
-
-Przykładowy odnośnik do wzoru~\eqref{eq:sum}.
-
-Przykładowy wzór w tekście $\lambda = \sum_{i=1}^n \delta_i$, bez numeracji.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Cytowania}
 \label{sec:cytowania}
 
@@ -557,64 +676,7 @@ Lista numerowana z dłuższymi opisami:
 \item Trzeci element listy.
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Algorytmy}
-\label{sec:algorytmy}
 
-Algorytm~\ref{alg:pseudo-code} przedstawia przykładowy algorytm zaprezentowany w~\cite{fiorio2017algorithm2e}. 
-
-\begin{algorithm}[!htbp]
-\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
-\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
-\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-\Input{A bitmap $Im$ of size $w\times l$}
-\Output{A partition of the bitmap}
-\BlankLine
-\emph{special treatment of the first line}\;
-\For{$i\leftarrow 2$ \KwTo $l$}{
-\emph{special treatment of the first element of line $i$}\;
-\For{$j\leftarrow 2$ \KwTo $w$}{\label{forins}
-\Left$\leftarrow$ \FindCompress{$Im[i,j-1]$}\;
-\Up$\leftarrow$ \FindCompress{$Im[i-1,]$}\;
-\This$\leftarrow$ \FindCompress{$Im[i,j]$}\;
-\If(\tcp*[h]{O(\Left,\This)==1}){\Left compatible with \This}{\label{lt}
-\lIf{\Left $<$ \This}{\Union{\Left,\This}}
-\lElse{\Union{\This,\Left}}
-}
-\If(\tcp*[f]{O(\Up,\This)==1}){\Up compatible with \This}{\label{ut}
-\lIf{\Up $<$ \This}{\Union{\Up,\This}}
-\tcp{\This is put under \Up to keep tree as flat as possible}\label{cmt}
-\lElse{\Union{\This,\Up}}\tcp*[h]{\This linked to \Up}\label{lelse}
-}
-}
-\lForEach{element $e$ of the line $i$}{\FindCompress{p}}
-}
-  \caption[Przykładowy algorytm]{Przykładowy algorytm (źródło: \cite{fiorio2017algorithm2e}).}
-  \label{alg:pseudo-code}
-\end{algorithm}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-\section{Fragmenty kodu źródłowego}
-\label{sec:listingi}
-Listing~\ref{lst:maximum} przedstawia przykładowy fragment kodu źródłowego.
-
-\begin{lstlisting}[language=Python,float=!htbp,caption={[Przykładowy fragment kodu]Przykładowy fragment kodu (źródło:
-  \cite{author2021title})},label=lst:maximum]
-# The maximum of two numbers
-
-def maximum(x, y):
-
-    if x >= y:
-        return x
-    else:
-        return y
-
-x = 2
-y = 6
-print(maximum(x, y),"is the largest of the numbers ", x, " and ", y)
-
-\end{lstlisting}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \printbibliography
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
