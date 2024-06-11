@@ -33,7 +33,7 @@ spec:
       serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-rabbitmq-operator:v1.0.0
+          image: matipl01/ecsb-rabbitmq-operator:v1.0.1
           ports:
             - containerPort: 5672
           args:

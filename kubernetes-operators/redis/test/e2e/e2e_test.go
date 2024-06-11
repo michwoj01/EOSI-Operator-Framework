@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/redis/test/utils"
+	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/redis/test/utils"
 )
 
 const namespace = "redis-system"
