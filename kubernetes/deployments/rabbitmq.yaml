@@ -13,7 +13,7 @@ spec:
       port: 5672
       targetPort: 5672
   selector:
-    app.kubernetes.io/name: rabbitmq
+    app: rabbitmq
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,6 +46,13 @@ kind: RabbitMQ
 metadata:
   name: rabbitmq
   namespace: default
+  labels:
+    app.kubernetes.io/name: rabbitmq
+    app.kubernetes.io/instance: rabbitmq
+    app.kubernetes.io/part-of: kubernetes-operators
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: kubernetes-operators
+    app: rabbitmq
 spec:
   containers:
     - image: rabbitmq:3.12-management

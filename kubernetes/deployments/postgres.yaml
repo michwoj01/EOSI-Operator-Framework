@@ -8,7 +8,7 @@ spec:
       port: 5432
       targetPort: 5432
   selector:
-    app.kubernetes.io/name: postgres
+    app: postgres
 ---
 apiVersion: apps/v1
 kind: Deployment
