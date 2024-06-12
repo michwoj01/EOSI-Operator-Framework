@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
+	postgresv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
 )
 
 // PostgresReconciler reconciles a Postgres object
@@ -26,9 +26,9 @@ type PostgresReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=database.pl.edu.agh,resources=postgres/finalizers,verbs=update
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=postgres,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=postgres/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=postgres/finalizers,verbs=update
 
 func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Create a logger with context specific to this reconcile loop
@@ -37,7 +37,7 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Fetch the Postgres instance
 	logger.Info("Fetching Postgres instance")
-	postgres := &databasev1.Postgres{}
+	postgres := &postgresv1.Postgres{}
 	err := r.Get(ctx, req.NamespacedName, postgres)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -112,7 +112,7 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, postgres *databasev1.Postgres) error {
+func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, postgres *postgresv1.Postgres) error {
 	logger := r.Log.WithValues("namespace", postgres.Namespace, "postgres", postgres.Name, "pvcName", pvcName)
 	logger.Info("Ensuring PVC for Postgres")
 
@@ -157,7 +157,7 @@ func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, post
 	return nil
 }
 
-func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
+func (r *PostgresReconciler) newPodForCR(cr *postgresv1.Postgres) *corev1.Pod {
 	logger := r.Log.WithValues("namespace", cr.Namespace, "postgres", cr.Name)
 	logger.Info("Creating a new Pod for Postgres")
 
@@ -225,6 +225,7 @@ func (r *PostgresReconciler) newPodForCR(cr *databasev1.Postgres) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
+			ServiceAccountName: "kubernetes-operators-sa",
 			Containers: []corev1.Container{{
 				Name:  "postgres",
 				Image: cr.Spec.Image,
@@ -261,7 +262,7 @@ func (r *PostgresReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger := r.Log.WithValues("controller", "PostgresReconciler")
 	logger.Info("Setting up the controller manager")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&databasev1.Postgres{}).
+		For(&postgresv1.Postgres{}).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
 		Complete(r)

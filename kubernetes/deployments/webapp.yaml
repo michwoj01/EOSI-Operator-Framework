@@ -23,7 +23,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: webapp
   template:
-    metadata: 
+    metadata:
       labels:
         app.kubernetes.io/name: webapp
     spec:

@@ -24,16 +24,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rabbitmq-operator
+      app.kubernetes.io/name: rabbitmq-operator
   template:
     metadata:
       labels:
-        app: rabbitmq-operator
+        app.kubernetes.io/name: rabbitmq-operator
     spec:
-      serviceAccountName: rabbitmq-operator-sa
+      serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-rabbitmq-operator:v1.0.0
+          image: matipl01/ecsb-rabbitmq-operator:v1.0.3
           ports:
             - containerPort: 5672
           args:
@@ -41,17 +41,11 @@ spec:
             - "--zap-stacktrace-level=info"
             - "--zap-encoder=console"
 ---
-apiVersion: apps.pl.edu.agh/v1
+apiVersion: kubernetes-operators.pl.edu.agh/v1
 kind: RabbitMQ
 metadata:
   name: rabbitmq
   namespace: default
-  labels:
-    app.kubernetes.io/name: rabbitmq
-    app.kubernetes.io/instance: rabbitmq
-    app.kubernetes.io/part-of: kubernetes-operators
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: kubernetes-operators
 spec:
   containers:
     - image: rabbitmq:3.12-management
@@ -68,7 +62,7 @@ spec:
       configMap:
         name: rabbitmq-config
         items:
-        - key: rabbitmq-conf
-          path: rabbitmq.conf
-        - key: enabled-plugins
-          path: enabled_plugins
+          - key: rabbitmq-conf
+            path: rabbitmq.conf
+          - key: enabled-plugins
+            path: enabled_plugins

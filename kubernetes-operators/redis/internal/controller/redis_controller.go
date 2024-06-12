@@ -14,11 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	// "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	// "sigs.k8s.io/controller-runtime/pkg/log"
 
-	mydomainv1 "github.com/redis/api/v1"
+	redisv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/redis/api/v1"
 )
 
 // RedisReconciler reconciles a Redis object
@@ -28,9 +26,9 @@ type RedisReconciler struct {
 	Log    logr.Logger
 }
 
-//+kubebuilder:rbac:groups=my.domain,resources=redis,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=my.domain,resources=redis/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=my.domain,resources=redis/finalizers,verbs=update
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=redis,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=redis/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=redis/finalizers,verbs=update
 
 func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Create a logger with context specific to this reconcile loop
@@ -39,7 +37,7 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// Fetch the Redis instance
 	logger.Info("Fetching Redis instance")
-	redis := &mydomainv1.Redis{}
+	redis := &redisv1.Redis{}
 	err := r.Get(ctx, req.NamespacedName, redis)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -114,8 +112,8 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *mydomainv1.Redis) error {
-	logger := r.Log.WithValues("namespace", redis.Namespace, "Redis", redis.Name, "pvcName", pvcName)
+func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *redisv1.Redis) error {
+	logger := r.Log.WithValues("namespace", redis.Namespace, "redis", redis.Name, "pvcName", pvcName)
 	logger.Info("Ensuring PVC for Redis")
 
 	pvc := &corev1.PersistentVolumeClaim{}
@@ -134,7 +132,7 @@ func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: resource.MustParse("100Mbi"),
+						corev1.ResourceStorage: resource.MustParse("1Gi"),
 					},
 				},
 			},
@@ -159,7 +157,7 @@ func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *
 	return nil
 }
 
-func (r *RedisReconciler) newPodForCR(cr *mydomainv1.Redis) *corev1.Pod {
+func (r *RedisReconciler) newPodForCR(cr *redisv1.Redis) *corev1.Pod {
 	logger := r.Log.WithValues("namespace", cr.Namespace, "redis", cr.Name)
 	logger.Info("Creating a new Pod for Redis")
 
@@ -199,6 +197,7 @@ func (r *RedisReconciler) newPodForCR(cr *mydomainv1.Redis) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
+			ServiceAccountName: "kubernetes-operators-sa",
 			Containers: []corev1.Container{{
 				Name:  "redis",
 				Image: cr.Spec.Image,
@@ -219,7 +218,7 @@ func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger := r.Log.WithValues("controller", "RedisReconciler")
 	logger.Info("Setting up the controller manager")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&mydomainv1.Redis{}).
+		For(&redisv1.Redis{}).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.PersistentVolumeClaim{}).
 		Complete(r)

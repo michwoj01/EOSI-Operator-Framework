@@ -1,19 +1,3 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
@@ -31,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	appsv1alpha1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/rabbitmq/api/v1"
+	rabbitmqv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/rabbitmq/api/v1"
 )
 
 // RabbitMQReconciler reconciles a RabbitMQ object
@@ -41,9 +25,9 @@ type RabbitMQReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.pl.edu.agh,resources=rabbitmqs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=rabbitmqs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=rabbitmqs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=rabbitmqs/finalizers,verbs=update
 
 func (r *RabbitMQReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Create a logger with context specific to this reconcile loop
@@ -52,7 +36,7 @@ func (r *RabbitMQReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// Fetch the RabbitMQ instance
 	logger.Info("Fetching RabbitMQ instance")
-	rabbitmq := &appsv1alpha1.RabbitMQ{}
+	rabbitmq := &rabbitmqv1.RabbitMQ{}
 	err := r.Get(ctx, req.NamespacedName, rabbitmq)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -69,10 +53,16 @@ func (r *RabbitMQReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	// Update the RabbitMQ status with the pod names
+	if err := r.updateStatus(ctx, rabbitmq); err != nil {
+		logger.Error(err, "Failed to update RabbitMQ status")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
-func (r *RabbitMQReconciler) ensureDeployment(ctx context.Context, rabbitmq *appsv1alpha1.RabbitMQ) error {
+func (r *RabbitMQReconciler) ensureDeployment(ctx context.Context, rabbitmq *rabbitmqv1.RabbitMQ) error {
 	logger := r.Log.WithValues("namespace", rabbitmq.Namespace, "rabbitmq", rabbitmq.Name, "deployment", "rabbitmq")
 	logger.Info("Ensuring Deployment for RabbitMQ")
 
@@ -132,11 +122,46 @@ func (r *RabbitMQReconciler) ensureDeployment(ctx context.Context, rabbitmq *app
 	return nil
 }
 
+func (r *RabbitMQReconciler) updateStatus(ctx context.Context, rabbitmq *rabbitmqv1.RabbitMQ) error {
+	logger := r.Log.WithValues("namespace", rabbitmq.Namespace, "rabbitmq", rabbitmq.Name)
+	logger.Info("Updating RabbitMQ status with the pod names")
+
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(rabbitmq.Namespace),
+		client.MatchingLabels{"app": "rabbitmq"},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		logger.Error(err, "Failed to list pods")
+		return err
+	}
+
+	podNames := getPodNames(podList.Items)
+	if !reflect.DeepEqual(podNames, rabbitmq.Status.Nodes) {
+		rabbitmq.Status.Nodes = podNames
+		if err := r.Status().Update(ctx, rabbitmq); err != nil {
+			logger.Error(err, "Failed to update RabbitMQ status")
+			return err
+		}
+		logger.Info("RabbitMQ status updated", "Status.Nodes", rabbitmq.Status.Nodes)
+	}
+
+	return nil
+}
+
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
+	}
+	return podNames
+}
+
 func (r *RabbitMQReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger := r.Log.WithValues("controller", "RabbitMQReconciler")
 	logger.Info("Setting up the controller manager")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1alpha1.RabbitMQ{}).
+		For(&rabbitmqv1.RabbitMQ{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

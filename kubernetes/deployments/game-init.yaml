@@ -14,7 +14,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: game-init
-  namespace: default  
+  namespace: default
   labels:
     app.kubernetes.io/name: game-init
 spec:
@@ -23,7 +23,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: game-init
   template:
-    metadata: 
+    metadata:
       labels:
         app.kubernetes.io/name: game-init
     spec:

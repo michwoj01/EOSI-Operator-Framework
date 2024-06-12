@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: rabbitmqs.apps.pl.edu.agh
+  name: rabbitmqs.kubernetes-operators.pl.edu.agh
 spec:
-  group: apps.pl.edu.agh
+  group: kubernetes-operators.pl.edu.agh
   names:
     kind: RabbitMQ
     listKind: RabbitMQList
@@ -11,124 +11,114 @@ spec:
     singular: rabbitmq
   scope: Namespaced
   versions:
-  - name: v1
-    served: true
-    storage: true
-    schema:
-      openAPIV3Schema:
-        description: RabbitMQ is the Schema for the rabbitmqs API
-        type: object
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: RabbitMQSpec defines the desired state of RabbitMQ
-            type: object
-            properties:
-              containers:
-                description: Containers for RabbitMQ instance
-                type: array
-                items:
-                  type: object
-                  properties:
-                    image:
-                      description: Docker image for the container
-                      type: string
-                    name:
-                      description: Name of the container
-                      type: string
-                    ports:
-                      description: Ports to expose from the container
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          containerPort:
-                            description: Port to expose from the container
-                            type: integer
-                    volumeMounts:
-                      description: Volume mounts for the container
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          mountPath:
-                            description: Path to mount the volume
-                            type: string
-                          name:
-                            description: Name of the volume
-                            type: string
-              restartPolicy:
-                description: Restart policy for RabbitMQ pods
-                type: string
-              volumes:
-                description: Volumes for RabbitMQ instance
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      description: Name of the volume
-                      type: string
-                    configMap:
-                      description: ConfigMap for the volume
-                      type: object
-                      properties:
-                        name:
-                          description: Name of the ConfigMap
-                          type: string
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          description: RabbitMQ is the Schema for the rabbitmq API
+          type: object
+          properties:
+            apiVersion:
+              description: "APIVersion defines the versioned schema of this representation of an object."
+              type: string
+            kind:
+              description: "Kind is a string value representing the REST resource this object represents."
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: RabbitMQSpec defines the desired state of RabbitMQ
+              type: object
+              properties:
+                containers:
+                  description: List of containers for the RabbitMQ pod
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      image:
+                        description: Docker image for the RabbitMQ instance
+                        type: string
+                      name:
+                        description: Name of the container
+                        type: string
+                      ports:
+                        description: List of ports to expose from the container
+                        type: array
                         items:
-                          description: Items to project from the ConfigMap
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              key:
-                                description: Key to project
-                                type: string
-                              path:
-                                description: Path to project the key
-                                type: string
-            required:
-              - containers
-              - restartPolicy
-              - volumes
-          status:
-            description: RabbitMQStatus defines the observed state of RabbitMQ
-            type: object
-            properties:
-              conditions:
-                description: Conditions describe the state of the RabbitMQ instance
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type:
-                      description: Type of the condition
-                      type: string
-                    status:
-                      description: Status of the condition
-                      type: string
-                    lastUpdateTime:
-                      description: Last time the condition was updated
-                      type: string
-                      format: date-time
-                    reason:
-                      description: Reason for the condition's last transition
-                      type: string
-                    message:
-                      description: Human-readable message indicating details about last transition
-                      type: string
-              nodes:
-                description: 'Nodes is the list of RabbitMQ pods'
-                type: array
-                items:
+                          type: object
+                          properties:
+                            containerPort:
+                              description: Port to expose from the container
+                              type: integer
+                      volumeMounts:
+                        description: List of volume mounts for the container
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              description: Path within the container at which the volume should be mounted
+                              type: string
+                            name:
+                              description: Name of the volume
+                              type: string
+                restartPolicy:
+                  description: Restart policy for all containers within the pod
                   type: string
-    subresources:
-      status: {}
+                volumes:
+                  description: List of volumes that can be mounted by containers belonging to the pod
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        description: Volume name
+                        type: string
+                      configMap:
+                        description: Selects a ConfigMap to populate the volume
+                        type: object
+                        properties:
+                          name:
+                            description: Name of the referent ConfigMap
+                            type: string
+                          items:
+                            description: List of ConfigMap keys to project into the volume
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  description: The key to project
+                                  type: string
+                                path:
+                                  description: The relative path of the file to map the key to
+                                  type: string
+              required:
+                - containers
+                - restartPolicy
+                - volumes
+            status:
+              description: RabbitMQStatus defines the observed state of RabbitMQ
+              type: object
+              properties:
+                conditions:
+                  description: Conditions represent the latest available observations of an object's state
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        description: Type of condition
+                        type: string
+                      status:
+                        description: Status of the condition
+                        type: string
+                nodes:
+                  description: List of RabbitMQ pods
+                  type: array
+                  items:
+                    type: string
+      subresources:
+        status: {}

@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
+	postgresv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
 )
 
 var _ = Describe("Postgres Controller", func() {
@@ -40,13 +40,13 @@ var _ = Describe("Postgres Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		postgres := &databasev1.Postgres{}
+		postgres := &postgresv1.Postgres{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Postgres")
 			err := k8sClient.Get(ctx, typeNamespacedName, postgres)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &databasev1.Postgres{
+				resource := &postgresv1.Postgres{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("Postgres Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &databasev1.Postgres{}
+			resource := &postgresv1.Postgres{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

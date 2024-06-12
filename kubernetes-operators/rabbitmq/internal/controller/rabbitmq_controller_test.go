@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	appsv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/rabbitmq/api/v1"
+	rabbitmqv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/rabbitmq/api/v1"
 )
 
 var _ = Describe("RabbitMQ Controller", func() {
@@ -40,13 +40,13 @@ var _ = Describe("RabbitMQ Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		rabbitmq := &appsv1.RabbitMQ{}
+		rabbitmq := &rabbitmqv1.RabbitMQ{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind RabbitMQ")
 			err := k8sClient.Get(ctx, typeNamespacedName, rabbitmq)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &appsv1.RabbitMQ{
+				resource := &rabbitmqv1.RabbitMQ{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("RabbitMQ Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &appsv1.RabbitMQ{}
+			resource := &rabbitmqv1.RabbitMQ{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

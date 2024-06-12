@@ -1,19 +1,3 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
@@ -34,8 +18,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	mydomainv1 "github.com/redis/api/v1"
-	"github.com/redis/internal/controller"
+	redisv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/redis/api/v1"
+	"github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/redis/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,7 +31,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(mydomainv1.AddToScheme(scheme))
+	utilruntime.Must(redisv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -104,7 +88,7 @@ func main() {
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "6ac22841.my.domain",
+		LeaderElectionID:       "e0fdd4f7.pl.edu.agh",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
