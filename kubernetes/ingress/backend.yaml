@@ -3,39 +3,34 @@ kind: Ingress
 metadata:
   name: backend
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
+  ingressClassName: nginx
   rules:
-    - host: ecsb.agh.edu.pl
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: webapp
-                port:
-                  number: 5173
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: game-init
-                port:
-                  number: 2136
-          - path: /moving
-            pathType: Prefix
-            backend:
-              service:
-                name: moving
-                port:
-                  number: 8085
-          - path: /chat
-            pathType: Prefix
-            backend:
-              service:
-                name: chat
-                port:
-                  number: 2138
+  - host: ecsb.agh.edu.pl
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: game-init
+            port:
+              number: 2136
+      - path: /moving(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: moving
+            port:
+              number: 8085
+      - path: /chat(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: chat
+            port:
+              number: 2138

@@ -3,10 +3,12 @@ kind: Service
 metadata:
   name: webapp
 spec:
+  type: NodePort
   ports:
     - protocol: TCP
       port: 5173
       targetPort: 5173
+      nodePort: 30007
   selector:
     app.kubernetes.io/name: webapp
 ---
