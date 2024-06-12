@@ -28,7 +28,7 @@ spec:
       serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-postgres-operator:v1.0.2
+          image: matipl01/ecsb-postgres-operator:v1.0.5
           ports:
             - containerPort: 5432
           args:
@@ -36,7 +36,7 @@ spec:
             - "--zap-stacktrace-level=info"
             - "--zap-encoder=console"
 ---
-apiVersion: database.pl.edu.agh/v1
+apiVersion: kubernetes-operators.pl.edu.agh/v1
 kind: Postgres
 metadata:
   name: postgres

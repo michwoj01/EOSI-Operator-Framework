@@ -12,8 +12,8 @@ type PostgresSpec struct {
 	DbUser               string `json:"dbUser"`
 	DbPassword           string `json:"dbPassword"`
 	DbPort               string `json:"dbPort"`
-	InitScriptsConfigMap string `json:"initScriptsConfigMap,omitempty"`
 	DataPvcName          string `json:"dataPvcName"`
+	InitScriptsConfigMap string `json:"initScriptsConfigMap,omitempty"`
 }
 
 // PostgresStatus defines the observed state of Postgres

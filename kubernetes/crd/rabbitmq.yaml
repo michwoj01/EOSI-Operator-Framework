@@ -16,14 +16,14 @@ spec:
       storage: true
       schema:
         openAPIV3Schema:
-          description: RabbitMQ is the Schema for the rabbitmqs API
+          description: RabbitMQ is the Schema for the rabbitmq API
           type: object
           properties:
             apiVersion:
-              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: "APIVersion defines the versioned schema of this representation of an object."
               type: string
             kind:
-              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: "Kind is a string value representing the REST resource this object represents."
               type: string
             metadata:
               type: object
@@ -32,19 +32,19 @@ spec:
               type: object
               properties:
                 containers:
-                  description: Containers for RabbitMQ instance
+                  description: List of containers for the RabbitMQ pod
                   type: array
                   items:
                     type: object
                     properties:
                       image:
-                        description: Docker image for the container
+                        description: Docker image for the RabbitMQ instance
                         type: string
                       name:
                         description: Name of the container
                         type: string
                       ports:
-                        description: Ports to expose from the container
+                        description: List of ports to expose from the container
                         type: array
                         items:
                           type: object
@@ -53,47 +53,47 @@ spec:
                               description: Port to expose from the container
                               type: integer
                       volumeMounts:
-                        description: Volume mounts for the container
+                        description: List of volume mounts for the container
                         type: array
                         items:
                           type: object
                           properties:
                             mountPath:
-                              description: Path to mount the volume
+                              description: Path within the container at which the volume should be mounted
                               type: string
                             name:
                               description: Name of the volume
                               type: string
                 restartPolicy:
-                  description: Restart policy for RabbitMQ pods
+                  description: Restart policy for all containers within the pod
                   type: string
                 volumes:
-                  description: Volumes for RabbitMQ instance
+                  description: List of volumes that can be mounted by containers belonging to the pod
                   type: array
                   items:
                     type: object
                     properties:
                       name:
-                        description: Name of the volume
+                        description: Volume name
                         type: string
                       configMap:
-                        description: ConfigMap for the volume
+                        description: Selects a ConfigMap to populate the volume
                         type: object
                         properties:
                           name:
-                            description: Name of the ConfigMap
+                            description: Name of the referent ConfigMap
                             type: string
                           items:
-                            description: Items to project from the ConfigMap
+                            description: List of ConfigMap keys to project into the volume
                             type: array
                             items:
                               type: object
                               properties:
                                 key:
-                                  description: Key to project
+                                  description: The key to project
                                   type: string
                                 path:
-                                  description: Path to project the key
+                                  description: The relative path of the file to map the key to
                                   type: string
               required:
                 - containers
@@ -104,29 +104,19 @@ spec:
               type: object
               properties:
                 conditions:
-                  description: Conditions describe the state of the RabbitMQ instance
+                  description: Conditions represent the latest available observations of an object's state
                   type: array
                   items:
                     type: object
                     properties:
                       type:
-                        description: Type of the condition
+                        description: Type of condition
                         type: string
                       status:
                         description: Status of the condition
                         type: string
-                      lastUpdateTime:
-                        description: Last time the condition was updated
-                        type: string
-                        format: date-time
-                      reason:
-                        description: Reason for the condition's last transition
-                        type: string
-                      message:
-                        description: Human-readable message indicating details about last transition
-                        type: string
                 nodes:
-                  description: "Nodes is the list of RabbitMQ pods"
+                  description: List of RabbitMQ pods
                   type: array
                   items:
                     type: string

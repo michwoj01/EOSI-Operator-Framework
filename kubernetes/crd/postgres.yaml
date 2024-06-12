@@ -1,13 +1,13 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: postgres.kubernetes-operators.pl.edu.agh
+  name: postgreses.kubernetes-operators.pl.edu.agh
 spec:
   group: kubernetes-operators.pl.edu.agh
   names:
     kind: Postgres
     listKind: PostgresList
-    plural: postgres
+    plural: postgreses
     singular: postgres
   scope: Namespaced
   versions:
@@ -16,14 +16,14 @@ spec:
       storage: true
       schema:
         openAPIV3Schema:
-          description: Postgres is the Schema for the postgres API
+          description: Postgres is the Schema for the postgreses API
           type: object
           properties:
             apiVersion:
-              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: "APIVersion defines the versioned schema of this representation of an object."
               type: string
             kind:
-              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: "Kind is a string value representing the REST resource this object represents."
               type: string
             metadata:
               type: object
@@ -32,7 +32,7 @@ spec:
               type: object
               properties:
                 size:
-                  description: Number of Postgres instances
+                  description: Size of the Postgres deployment
                   type: integer
                 image:
                   description: Docker image for the Postgres instance
@@ -41,19 +41,19 @@ spec:
                   description: Name of the database
                   type: string
                 dbUser:
-                  description: Username for the database
+                  description: Database user
                   type: string
                 dbPassword:
-                  description: Password for the database
+                  description: Database password
                   type: string
                 dbPort:
-                  description: Port for the database
+                  description: Database port
                   type: string
                 initScriptsConfigMap:
-                  description: Name of the ConfigMap with the database init scripts
+                  description: Name of the ConfigMap containing initialization scripts
                   type: string
                 dataPvcName:
-                  description: Name of the PVC that will be used for the database data
+                  description: Name of the PVC for Postgres data
                   type: string
               required:
                 - size
@@ -67,8 +67,20 @@ spec:
               description: PostgresStatus defines the observed state of Postgres
               type: object
               properties:
+                conditions:
+                  description: Conditions represent the latest available observations of an object's state
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        description: Type of condition
+                        type: string
+                      status:
+                        description: Status of the condition
+                        type: string
                 nodes:
-                  description: "Nodes is the list of Postgres pods"
+                  description: List of Postgres pods
                   type: array
                   items:
                     type: string

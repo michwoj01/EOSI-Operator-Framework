@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -21,8 +22,8 @@ import (
 // RedisReconciler reconciles a Redis object
 type RedisReconciler struct {
 	client.Client
-	Log    logr.Logger
 	Scheme *runtime.Scheme
+	Log    logr.Logger
 }
 
 //+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=redis,verbs=get;list;watch;create;update;patch;delete
@@ -30,9 +31,12 @@ type RedisReconciler struct {
 //+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=redis/finalizers,verbs=update
 
 func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// Create a logger with context specific to this reconcile loop
 	logger := r.Log.WithValues("namespace", req.Namespace, "redis", req.Name)
 	logger.Info("Reconciling Redis instance")
 
+	// Fetch the Redis instance
+	logger.Info("Fetching Redis instance")
 	redis := &redisv1.Redis{}
 	err := r.Get(ctx, req.NamespacedName, redis)
 	if err != nil {
@@ -44,19 +48,65 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	// Ensure PVCs exist
 	if err := r.ensurePVC(ctx, redis.Spec.DataPvcName, redis); err != nil {
 		logger.Error(err, "Failed to ensure data PVC")
 		return ctrl.Result{}, err
 	}
 
-	if err := r.ensurePod(ctx, redis); err != nil {
-		logger.Error(err, "Failed to ensure Pod")
+	// Check if the Pod already exists
+	logger.Info("Checking if the Pod already exists")
+	found := &corev1.Pod{}
+	err = r.Get(ctx, types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Info("Pod does not exist, will create a new one")
+		// Define a new Pod object
+		logger.Info("Defining a new Pod object")
+		pod := r.newPodForCR(redis)
+
+		// Set Redis instance as the owner and controller
+		if err := controllerutil.SetControllerReference(redis, pod, r.Scheme); err != nil {
+			logger.Error(err, "Failed to set controller reference")
+			return ctrl.Result{}, err
+		}
+
+		err = r.Create(ctx, pod)
+		if err != nil {
+			logger.Error(err, "Failed to create new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
+			return ctrl.Result{}, err
+		}
+		// Pod created successfully - return and requeue
+		logger.Info("Pod created successfully")
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		logger.Error(err, "Failed to get Pod")
 		return ctrl.Result{}, err
+	} else {
+		// If the Pod exists and is not managed by this operator, delete it
+		if !metav1.IsControlledBy(found, redis) {
+			logger.Info("Found existing Pod not managed by this operator, deleting it", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+			err = r.Delete(ctx, found)
+			if err != nil {
+				logger.Error(err, "Failed to delete existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Deleted existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+			return ctrl.Result{Requeue: true}, nil
+		}
+		logger.Info("Pod already exists and is managed by this operator", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	}
 
-	if err := r.updateStatus(ctx, redis); err != nil {
-		logger.Error(err, "Failed to update Redis status")
-		return ctrl.Result{}, err
+	// Update the Redis status with the pod names
+	logger.Info("Updating Redis status with the pod names")
+	podNames := []string{found.Name}
+	if !reflect.DeepEqual(podNames, redis.Status.Nodes) {
+		redis.Status.Nodes = podNames
+		err := r.Status().Update(ctx, redis)
+		if err != nil {
+			logger.Error(err, "Failed to update Redis status")
+			return ctrl.Result{}, err
+		}
+		logger.Info("Redis status updated", "Status.Nodes", redis.Status.Nodes)
 	}
 
 	return ctrl.Result{}, nil
@@ -87,6 +137,7 @@ func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *
 				},
 			},
 		}
+		// Set Redis instance as the owner and controller
 		if err := controllerutil.SetControllerReference(redis, pvc, r.Scheme); err != nil {
 			logger.Error(err, "Failed to set controller reference for PVC")
 			return err
@@ -106,49 +157,37 @@ func (r *RedisReconciler) ensurePVC(ctx context.Context, pvcName string, redis *
 	return nil
 }
 
-func (r *RedisReconciler) ensurePod(ctx context.Context, redis *redisv1.Redis) error {
-	logger := r.Log.WithValues("namespace", redis.Namespace, "redis", redis.Name)
-	logger.Info("Ensuring Pod for Redis")
-
-	pod := r.newPodForCR(redis)
-	foundPod := &corev1.Pod{}
-	err := r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, foundPod)
-	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Pod not found, creating a new one")
-		if err := controllerutil.SetControllerReference(redis, pod, r.Scheme); err != nil {
-			logger.Error(err, "Failed to set controller reference for Pod")
-			return err
-		}
-		err = r.Create(ctx, pod)
-		if err != nil {
-			logger.Error(err, "Failed to create Pod")
-			return err
-		}
-		return nil
-	} else if err != nil {
-		logger.Error(err, "Failed to get Pod")
-		return err
-	} else if !reflect.DeepEqual(pod.Spec, foundPod.Spec) {
-		logger.Info("Pod spec has changed, updating Pod")
-		foundPod.Spec = pod.Spec
-		err = r.Update(ctx, foundPod)
-		if err != nil {
-			logger.Error(err, "Failed to update Pod")
-			return err
-		}
-		return nil
-	}
-
-	logger.Info("Pod already exists and is up to date")
-	return nil
-}
-
 func (r *RedisReconciler) newPodForCR(cr *redisv1.Redis) *corev1.Pod {
 	logger := r.Log.WithValues("namespace", cr.Namespace, "redis", cr.Name)
 	logger.Info("Creating a new Pod for Redis")
 
 	labels := map[string]string{
 		"app": cr.Name,
+	}
+
+	// Check if required PVC is set
+	if cr.Spec.DataPvcName == "" {
+		errMsg := fmt.Sprintf("Missing required PVC for Redis: DataPvcName=%s", cr.Spec.DataPvcName)
+		logger.Error(fmt.Errorf(errMsg), "PVC not set")
+		return nil
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: "redis-cache",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: cr.Spec.DataPvcName,
+				},
+			},
+		},
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "redis-cache",
+			MountPath: "/redis_data",
+		},
 	}
 
 	return &corev1.Pod{
@@ -159,66 +198,22 @@ func (r *RedisReconciler) newPodForCR(cr *redisv1.Redis) *corev1.Pod {
 		},
 		Spec: corev1.PodSpec{
 			ServiceAccountName: "kubernetes-operators-sa",
-			Containers: []corev1.Container{
-				{
-					Name:  "redis",
-					Image: cr.Spec.Image,
-					Ports: []corev1.ContainerPort{{
-						ContainerPort: cr.Spec.Port,
-					}},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      "redis-cache",
-						MountPath: "/redis_data",
-					}},
-				},
-			},
-			Volumes: []corev1.Volume{{
-				Name: "redis-cache",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: cr.Spec.DataPvcName,
-					},
-				},
+			Containers: []corev1.Container{{
+				Name:  "redis",
+				Image: cr.Spec.Image,
+				Ports: []corev1.ContainerPort{{
+					ContainerPort: 6379,
+				}, {
+					ContainerPort: 8001,
+				}},
+				VolumeMounts: volumeMounts,
 			}},
+			Volumes: volumes,
 		},
 	}
 }
 
-func (r *RedisReconciler) updateStatus(ctx context.Context, redis *redisv1.Redis) error {
-	logger := r.Log.WithValues("namespace", redis.Namespace, "redis", redis.Name)
-	logger.Info("Updating Redis status with the pod names")
-
-	podList := &corev1.PodList{}
-	listOpts := []client.ListOption{
-		client.InNamespace(redis.Namespace),
-		client.MatchingLabels{"app": "redis"},
-	}
-	if err := r.List(ctx, podList, listOpts...); err != nil {
-		logger.Error(err, "Failed to list pods")
-		return err
-	}
-
-	podNames := getPodNames(podList.Items)
-	if !reflect.DeepEqual(podNames, redis.Status.Nodes) {
-		redis.Status.Nodes = podNames
-		if err := r.Status().Update(ctx, redis); err != nil {
-			logger.Error(err, "Failed to update Redis status")
-			return err
-		}
-		logger.Info("Redis status updated", "Status.Nodes", redis.Status.Nodes)
-	}
-
-	return nil
-}
-
-func getPodNames(pods []corev1.Pod) []string {
-	var podNames []string
-	for _, pod := range pods {
-		podNames = append(podNames, pod.Name)
-	}
-	return podNames
-}
-
+// SetupWithManager sets up the controller with the Manager.
 func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger := r.Log.WithValues("controller", "RedisReconciler")
 	logger.Info("Setting up the controller manager")
