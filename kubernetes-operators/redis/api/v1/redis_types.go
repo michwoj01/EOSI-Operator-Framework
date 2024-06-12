@@ -1,15 +1,15 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // RedisSpec defines the desired state of Redis
 type RedisSpec struct {
-	Size        int32  `json:"size"`
-	Image       string `json:"image"`
-	Port        int32  `json:"port"`
-	DataPvcName string `json:"dataPvcName"`
+	Containers    []corev1.Container   `json:"containers,omitempty"`
+	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
+	Volumes       []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 // RedisStatus defines the observed state of Redis
@@ -21,7 +21,7 @@ type RedisStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Redis is the Schema for the redis API
+// Redis is the Schema for the redises API
 type Redis struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

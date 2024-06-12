@@ -16,7 +16,7 @@ spec:
       storage: true
       schema:
         openAPIV3Schema:
-          description: Postgres is the Schema for the postgreses API
+          description: Postgres is the Schema for the postgres API
           type: object
           properties:
             apiVersion:
@@ -31,38 +31,52 @@ spec:
               description: PostgresSpec defines the desired state of Postgres
               type: object
               properties:
-                size:
-                  description: Size of the Postgres deployment
-                  type: integer
-                image:
-                  description: Docker image for the Postgres instance
+                containers:
+                  description: List of containers
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      image:
+                        type: string
+                      ports:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            containerPort:
+                              type: integer
+                      env:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                restartPolicy:
+                  description: Restart policy for all containers within the pod
                   type: string
-                dbName:
-                  description: Name of the database
-                  type: string
-                dbUser:
-                  description: Database user
-                  type: string
-                dbPassword:
-                  description: Database password
-                  type: string
-                dbPort:
-                  description: Database port
-                  type: string
-                initScriptsConfigMap:
-                  description: Name of the ConfigMap containing initialization scripts
-                  type: string
-                dataPvcName:
-                  description: Name of the PVC for Postgres data
-                  type: string
+                volumes:
+                  description: List of volumes that can be mounted by containers belonging to the pod
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      persistentVolumeClaim:
+                        type: object
+                        properties:
+                          claimName:
+                            type: string
               required:
-                - size
-                - image
-                - dbName
-                - dbUser
-                - dbPassword
-                - dbPort
-                - dataPvcName
+                - containers
+                - restartPolicy
+                - volumes
             status:
               description: PostgresStatus defines the observed state of Postgres
               type: object

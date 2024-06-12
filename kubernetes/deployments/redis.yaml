@@ -4,11 +4,7 @@ metadata:
   name: redis
 spec:
   ports:
-    - name: "management"
-      protocol: TCP
-      port: 8001
-      targetPort: 8001
-    - name: "connections"
+    - name: "redis"
       protocol: TCP
       port: 6379
       targetPort: 6379
@@ -33,11 +29,9 @@ spec:
       serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-redis-operator:v0.1.1
+          image: matipl01/ecsb-redis-operator:v0.1.2
           ports:
-            - name: "management"
-              containerPort: 8001
-            - name: "connections"
+            - name: "redis"
               containerPort: 6379
           args:
             - "--zap-log-level=debug"
@@ -57,7 +51,13 @@ metadata:
     app.kubernetes.io/created-by: kubernetes-operators
     app: redis
 spec:
-  size: 1
-  image: redis/redis-stack
-  port: 6379
-  dataPvcName: "redis-cache-pvc"
+  containers:
+    - name: redis
+      image: redis:6.2
+      ports:
+        - containerPort: 6379
+  restartPolicy: Always
+  volumes:
+    - name: redis-cache
+      persistentVolumeClaim:
+        claimName: redis-cache-pvc

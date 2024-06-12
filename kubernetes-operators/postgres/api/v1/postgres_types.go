@@ -1,19 +1,15 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PostgresSpec defines the desired state of Postgres
 type PostgresSpec struct {
-	Size                 int32  `json:"size"`
-	Image                string `json:"image"`
-	DbName               string `json:"dbName"`
-	DbUser               string `json:"dbUser"`
-	DbPassword           string `json:"dbPassword"`
-	DbPort               string `json:"dbPort"`
-	DataPvcName          string `json:"dataPvcName"`
-	InitScriptsConfigMap string `json:"initScriptsConfigMap,omitempty"`
+	Containers    []corev1.Container   `json:"containers,omitempty"`
+	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
+	Volumes       []corev1.Volume      `json:"volumes,omitempty"`
 }
 
 // PostgresStatus defines the observed state of Postgres
@@ -25,7 +21,7 @@ type PostgresStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Postgres is the Schema for the postgres API
+// Postgres is the Schema for the postgress API
 type Postgres struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

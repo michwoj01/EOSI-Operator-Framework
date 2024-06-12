@@ -2,13 +2,12 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	postgresv1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
+	databasev1 "github.com/michwoj01/EOSI-Operator-Framework/kubernetes-operators/postgres/api/v1"
 )
 
 // PostgresReconciler reconciles a Postgres object
@@ -31,13 +30,10 @@ type PostgresReconciler struct {
 //+kubebuilder:rbac:groups=kubernetes-operators.pl.edu.agh,resources=postgres/finalizers,verbs=update
 
 func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	// Create a logger with context specific to this reconcile loop
 	logger := r.Log.WithValues("namespace", req.Namespace, "postgres", req.Name)
 	logger.Info("Reconciling Postgres instance")
 
-	// Fetch the Postgres instance
-	logger.Info("Fetching Postgres instance")
-	postgres := &postgresv1.Postgres{}
+	postgres := &databasev1.Postgres{}
 	err := r.Get(ctx, req.NamespacedName, postgres)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -48,222 +44,122 @@ func (r *PostgresReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	// Ensure PVCs exist
-	if err := r.ensurePVC(ctx, postgres.Spec.DataPvcName, postgres); err != nil {
-		logger.Error(err, "Failed to ensure data PVC")
+	if err := r.ensureDeployment(ctx, postgres); err != nil {
+		logger.Error(err, "Failed to ensure Deployment")
 		return ctrl.Result{}, err
 	}
 
-	// Check if the Pod already exists
-	logger.Info("Checking if the Pod already exists")
-	found := &corev1.Pod{}
-	err = r.Get(ctx, types.NamespacedName{Name: postgres.Name, Namespace: postgres.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		logger.Info("Pod does not exist, will create a new one")
-		// Define a new Pod object
-		logger.Info("Defining a new Pod object")
-		pod := r.newPodForCR(postgres)
-
-		// Set Postgres instance as the owner and controller
-		if err := controllerutil.SetControllerReference(postgres, pod, r.Scheme); err != nil {
-			logger.Error(err, "Failed to set controller reference")
-			return ctrl.Result{}, err
-		}
-
-		err = r.Create(ctx, pod)
-		if err != nil {
-			logger.Error(err, "Failed to create new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-			return ctrl.Result{}, err
-		}
-		// Pod created successfully - return and requeue
-		logger.Info("Pod created successfully")
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		logger.Error(err, "Failed to get Pod")
+	if err := r.updateStatus(ctx, postgres); err != nil {
+		logger.Error(err, "Failed to update Postgres status")
 		return ctrl.Result{}, err
-	} else {
-		// If the Pod exists and is not managed by this operator, delete it
-		if !metav1.IsControlledBy(found, postgres) {
-			logger.Info("Found existing Pod not managed by this operator, deleting it", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-			err = r.Delete(ctx, found)
-			if err != nil {
-				logger.Error(err, "Failed to delete existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-				return ctrl.Result{}, err
-			}
-			logger.Info("Deleted existing Pod", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-			return ctrl.Result{Requeue: true}, nil
-		}
-		logger.Info("Pod already exists and is managed by this operator", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	}
-
-	// Update the Postgres status with the pod names
-	logger.Info("Updating Postgres status with the pod names")
-	podNames := []string{found.Name}
-	if !reflect.DeepEqual(podNames, postgres.Status.Nodes) {
-		postgres.Status.Nodes = podNames
-		err := r.Status().Update(ctx, postgres)
-		if err != nil {
-			logger.Error(err, "Failed to update Postgres status")
-			return ctrl.Result{}, err
-		}
-		logger.Info("Postgres status updated", "Status.Nodes", postgres.Status.Nodes)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *PostgresReconciler) ensurePVC(ctx context.Context, pvcName string, postgres *postgresv1.Postgres) error {
-	logger := r.Log.WithValues("namespace", postgres.Namespace, "postgres", postgres.Name, "pvcName", pvcName)
-	logger.Info("Ensuring PVC for Postgres")
+func (r *PostgresReconciler) ensureDeployment(ctx context.Context, postgres *databasev1.Postgres) error {
+	logger := r.Log.WithValues("namespace", postgres.Namespace, "postgres", postgres.Name, "deployment", "postgres")
+	logger.Info("Ensuring Deployment for Postgres")
 
-	pvc := &corev1.PersistentVolumeClaim{}
-	err := r.Get(ctx, types.NamespacedName{Name: pvcName, Namespace: postgres.Namespace}, pvc)
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgres",
+			Namespace: postgres.Namespace,
+			Labels:    map[string]string{"app": postgres.Name},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "postgres"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "postgres"},
+				},
+				Spec: corev1.PodSpec{
+					Containers:    postgres.Spec.Containers,
+					RestartPolicy: postgres.Spec.RestartPolicy,
+					Volumes:       postgres.Spec.Volumes,
+				},
+			},
+		},
+	}
+
+	foundDeployment := &appsv1.Deployment{}
+	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("PVC not found, creating a new one")
-		pvc = &corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pvcName,
-				Namespace: postgres.Namespace,
-				Labels:    map[string]string{"app": postgres.Name},
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteOnce,
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: resource.MustParse("1Gi"),
-					},
-				},
-			},
-		}
-		// Set Postgres instance as the owner and controller
-		if err := controllerutil.SetControllerReference(postgres, pvc, r.Scheme); err != nil {
-			logger.Error(err, "Failed to set controller reference for PVC")
+		logger.Info("Deployment not found, creating a new one")
+		if err := controllerutil.SetControllerReference(postgres, deployment, r.Scheme); err != nil {
+			logger.Error(err, "Failed to set controller reference for Deployment")
 			return err
 		}
-		err = r.Create(ctx, pvc)
+		err = r.Create(ctx, deployment)
 		if err != nil {
-			logger.Error(err, "Failed to create PVC")
+			logger.Error(err, "Failed to create Deployment")
 			return err
 		}
 	} else if err != nil {
-		logger.Error(err, "Failed to get PVC")
+		logger.Error(err, "Failed to get Deployment")
 		return err
+	} else if !reflect.DeepEqual(deployment.Spec, foundDeployment.Spec) {
+		logger.Info("Deployment spec has changed, updating Deployment")
+		foundDeployment.Spec = deployment.Spec
+		err = r.Update(ctx, foundDeployment)
+		if err != nil {
+			logger.Error(err, "Failed to update Deployment")
+			return err
+		}
 	} else {
-		logger.Info("PVC already exists")
+		logger.Info("Deployment already exists and is up to date")
 	}
 
 	return nil
 }
 
-func (r *PostgresReconciler) newPodForCR(cr *postgresv1.Postgres) *corev1.Pod {
-	logger := r.Log.WithValues("namespace", cr.Namespace, "postgres", cr.Name)
-	logger.Info("Creating a new Pod for Postgres")
+func (r *PostgresReconciler) updateStatus(ctx context.Context, postgres *databasev1.Postgres) error {
+	logger := r.Log.WithValues("namespace", postgres.Namespace, "postgres", postgres.Name)
+	logger.Info("Updating Postgres status with the pod names")
 
-	labels := map[string]string{
-		"app": cr.Name,
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(postgres.Namespace),
+		client.MatchingLabels{"app": "postgres"},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		logger.Error(err, "Failed to list pods")
+		return err
 	}
 
-	// Check if required environment variables are set
-	if cr.Spec.DbName == "" || cr.Spec.DbUser == "" || cr.Spec.DbPassword == "" || cr.Spec.DbPort == "" {
-		errMsg := fmt.Sprintf("Missing required environment variables for Postgres: DbName=%s, DbUser=%s, DbPassword=%s, DbPort=%s",
-			cr.Spec.DbName, cr.Spec.DbUser, cr.Spec.DbPassword, cr.Spec.DbPort)
-		logger.Error(fmt.Errorf(errMsg), "Environment variables not set")
-		return nil
+	podNames := getPodNames(podList.Items)
+	if !reflect.DeepEqual(podNames, postgres.Status.Nodes) {
+		postgres.Status.Nodes = podNames
+		if err := r.Status().Update(ctx, postgres); err != nil {
+			logger.Error(err, "Failed to update Postgres status")
+			return err
+		}
+		logger.Info("Postgres status updated", "Status.Nodes", postgres.Status.Nodes)
 	}
 
-	// Check if required PVC is set
-	if cr.Spec.DataPvcName == "" {
-		errMsg := fmt.Sprintf("Missing required PVC for Postgres: DataPvcName=%s", cr.Spec.DataPvcName)
-		logger.Error(fmt.Errorf(errMsg), "PVC not set")
-		return nil
+	return nil
+}
+
+func getPodNames(pods []corev1.Pod) []string {
+	var podNames []string
+	for _, pod := range pods {
+		podNames = append(podNames, pod.Name)
 	}
-
-	volumes := []corev1.Volume{
-		{
-			Name: "postgres-data",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: cr.Spec.DataPvcName,
-				},
-			},
-		},
-	}
-
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "postgres-data",
-			MountPath: "/var/lib/postgresql/data",
-		},
-	}
-
-	if cr.Spec.InitScriptsConfigMap != "" {
-		logger.Info("Adding init scripts volume to the Pod")
-
-		volumes = append(volumes, corev1.Volume{
-			Name: "init-scripts",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.InitScriptsConfigMap,
-					},
-				},
-			},
-		})
-
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "init-scripts",
-			MountPath: "/docker-entrypoint-initdb.d",
-		})
-	}
-
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			ServiceAccountName: "kubernetes-operators-sa",
-			Containers: []corev1.Container{{
-				Name:  "postgres",
-				Image: cr.Spec.Image,
-				Ports: []corev1.ContainerPort{{
-					ContainerPort: 5432,
-					Name:          "postgres",
-				}},
-				Env: []corev1.EnvVar{
-					{
-						Name:  "POSTGRES_DB",
-						Value: cr.Spec.DbName,
-					},
-					{
-						Name:  "POSTGRES_USER",
-						Value: cr.Spec.DbUser,
-					},
-					{
-						Name:  "POSTGRES_PASSWORD",
-						Value: cr.Spec.DbPassword,
-					},
-					{
-						Name:  "POSTGRES_PORT",
-						Value: cr.Spec.DbPort,
-					},
-				},
-				VolumeMounts: volumeMounts,
-			}},
-			Volumes: volumes,
-		},
-	}
+	return podNames
 }
 
 func (r *PostgresReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	logger := r.Log.WithValues("controller", "PostgresReconciler")
 	logger.Info("Setting up the controller manager")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&postgresv1.Postgres{}).
-		Owns(&corev1.Pod{}).
-		Owns(&corev1.PersistentVolumeClaim{}).
+		For(&databasev1.Postgres{}).
+		Owns(&appsv1.Deployment{}).
 		Complete(r)
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
 }
