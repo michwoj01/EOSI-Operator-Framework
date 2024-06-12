@@ -12,9 +12,15 @@ rules:
   - apiGroups:
       - kubernetes-operators.pl.edu.agh
     resources:
-      - postgres
+      - postgreses
+      - postgreses/status
+      - postgreses/finalizers
       - rabbitmqs
-      - redis
+      - rabbitmqs/status
+      - rabbitmqs/finalizers
+      - redises
+      - redises/status
+      - redises/finalizers
     verbs:
       - get
       - list
@@ -23,16 +29,6 @@ rules:
       - update
       - patch
       - delete
-  - apiGroups:
-      - kubernetes-operators.pl.edu.agh
-    resources:
-      - postgres/status
-      - rabbitmqs/status
-      - redis/status
-    verbs:
-      - get
-      - update
-      - patch
   - apiGroups:
       - ""
     resources:
