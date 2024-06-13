@@ -302,22 +302,6 @@ spec:
             - "--zap-encoder=console"
 \end{lstlisting}
 
-\subsection{Service dla PostgreSQL}
-
-\begin{lstlisting}[caption=Service dla PostgreSQL]
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-spec:
-  ports:
-    - protocol: TCP
-      port: 5432
-      targetPort: 5432
-  selector:
-    app: postgres
-\end{lstlisting}
-
 \subsection{PersistentVolumeClaim dla PostgreSQL}
 
 \begin{lstlisting}[caption=PersistentVolumeClaim dla PostgreSQL]
@@ -336,141 +320,127 @@ spec:
     requests:
       storage: 1Gi
 \end{lstlisting}
+\newpage
+
+\subsection{Konfiguracja serwisów}
+
+Aplikacja frontendowa oraz baza danych wystawione są na zewnątrz klastra poprzez serwisy typu NodePort, dzięki czemu dostępne są lokalnie:
+\begin{lstlisting}[caption=Konfiguracja serwisu webapp]
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 5173
+      targetPort: 5173
+      nodePort: 30007
+  selector:
+    app.kubernetes.io/name: webapp
+\end{lstlisting}
+\begin{lstlisting}[caption=Konfiguracja podów webapp]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: default
+  labels:
+    app.kubernetes.io/name: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webapp
+    spec:
+      containers:
+        - image: michwoj01/ecsb:webapp
+          name: webapp
+          ports:
+            - containerPort: 5173
+          env:
+            - name: "VITE_ECSB_MOVEMENT_WS_API_URL"
+              value: "ws://ecsb.agh.edu.pl/moving"
+            - name: "VITE_ECSB_CHAT_WS_API_URL"
+              value: "ws://ecsb.agh.edu.pl/chat"
+            - name: "VITE_ECSB_LOBBY_WS_API_URL"
+              value: "ws://ecsb.agh.edu.pl/chat/landing"
+            - name: "VITE_ECSB_HTTP_AUTH_AND_MENAGEMENT_API_URL"
+              value: "http://ecsb.agh.edu.pl/api"
+            - name: "VITE_ECSB_HTTP_SELF_INTERACTIONS_API_URL"
+              value: "http://ecsb.agh.edu.pl/chat"
+      restartPolicy: Always
+\end{lstlisting}
+\subsection{Konfiguracja Ingress}
+
+Moduły backendowe wystawione są poprzez Ingress, do którego żądania przesyła aplikacja frontendowa. Warto zaznaczyć, że ścieżki do serwisów określone w poniższym pliku muszą odpowiadać zmiennym środowiskowym wstrzykiwanym do podów webapp.
+\begin{lstlisting}[caption=Konfiguracja Ingress serwisów backendowych]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ecsb.agh.edu.pl
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: game-init
+            port:
+              number: 2136
+      - path: /moving(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: moving
+            port:
+              number: 8085
+      - path: /chat(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: chat
+            port:
+              number: 2138
+\end{lstlisting}
 
 Konfiguracja w Kubernetes pozwala na zarządzanie mikroserwisami w bardziej skalowalny i elastyczny sposób, umożliwiając dynamiczne skalowanie, zarządzanie stanem aplikacji oraz łatwiejszą integrację z innymi komponentami systemu. Wszystkie pliki konfiguracyjne YAML powinny być umieszczone w odpowiednim katalogu (np. \texttt{kubernetes}), aby można było łatwo zastosować je w klastrze Kubernetes.
 
-\section{Operator Framework dla middleware}
-TODO
-
-\section{Napotkane problemy}
-\par Jednymi z najistotniejszych elementów konfiguracji poza zwykłym zdefiniowaniem plików YAMLowych okazały się:
-\begin{itemize}
-    \item skrypty bazodanowe — Postgres oprócz tworzenia i obsługi instancji wymagał dostępu do skryptów bazodanowych, które tworzyły wszystkie potrzebne tabele. Oprócz zamontowania wolumenów w klastrze Minikube potrzebne było również przekopiowanie samych skryptów do środka klastra, aby pody mogły z nich korzystać przy inicjalizacji. Niestety okazało się, że ten sposób przekazania skryptów nie może być zautomatyzowany, stąd skorzystaliśmy z przekształcenia skryptów do ConfigMap i przekazania ich jako parametry startowe podów Postgresa.
-    \item dane Postgresa i Redisa — persystencja na lokalnym klastrze nie jest najlepszym rozwiązaniem (jeśli Minikube odmówi posłuszeństwa, dane przepadną), niemniej pojedyncze pody bywają jeszcze bardziej zawodne. Zamontowanie wolumenów zarówno dla danych statycznych (Postgres) jak i dynamicznych (Redis) było oczywistością.
-    \item konfiguracja RabbitMQ — okazało się, że przekazanie plików konfiguracyjnych poprzez zamontowanie ConfigMap spowodowało błędy poda (oczywiście nigdzie nielogowane), które uniemożliwiały podłączenie się serwisów. Konieczne stało się w tym przypadku zastosowanie Operator Framework, aby inicjalizować pody RabbitMQ z odpowiednimi pluginami.
-    \item zasoby potrzebne do stworzenia gry — jeden z modułów Chłopskiej Szkoły Biznesu wymagał zapisywania oraz odczytywania plików .jpg, będących elementami mapy lub grafikami postaci. Również w tym przypadku konieczne było zastosowanie persystentnego wolumenu wewnątrz klastra.
-\end{itemize}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\ChapterTitleInstallMethod} \label{sec:instalacja}
-
-\section{Instalacja niezbędnych narzędzi}
-
-\begin{enumerate}
-  \item \textbf{Instalacja Docker}:
-  \begin{enumerate}
-    \item Należy przejść na stronę \href{https://www.docker.com/products/docker-desktop}{Docker Desktop} i pobrać odpowiednią wersję dla systemu operacyjnego (Windows, macOS, Linux).
-    \item Następnie należy postępować zgodnie z opisanymi krokami instalacji dla używanego systemu operacyjnego.
-  \end{enumerate}
-  \item \textbf{Instalacja Minikube}:
-  \begin{enumerate}
-    \item Należy przejść na stronę \href{https://minikube.sigs.k8s.io/docs/start/}{Minikube} i pobrać odpowiednią wersję dla systemu operacyjnego, a następnie postępować zgodnie z krokami instalacji opisanymi w na załączonej stronie internetowej.
-    \item Uruchomienie Minikube:
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube start\end{lstlisting}\vspace{-20pt}
-  \end{enumerate}
-\end{enumerate}
-
-\section{Uruchomienie aplikacji na Kubernetes}
-
-\begin{enumerate}
-  \item \textbf{Pobranie repozytorium z rozwiązaniem}:
-  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
- git clone git@github.com:michwoj01/EOSI-Operator-Framework.git
- cd EOSI-Operator-Framework\end{lstlisting}\vspace{-20pt}
-  \item \textbf{Zastosowanie wszystkich plików konfiguracyjnych Kubernetes oraz Custom Resource Definition}:
-  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
- cd kubernetes && ./deploy.sh\end{lstlisting}\vspace{-20pt}
-  Jeżeli napotkano błąd \texttt{error looking up service account default/default: serviceaccount "default" not found}, należy ponownie uruchomić powyższą komendę.
-  \item \textbf{Sprawdzenie statusu stworzonych elementów}:
-  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-kubectl get all\end{lstlisting}\vspace{-20pt}
-\end{enumerate}
-
-\section{Debugowanie}
-
-W przypadku problemów, sprawdzenie statusu lub logów podów:
-\begin{quote}
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-kubectl describe <pod-name>
-kubectl logs <pod-name>
-\end{lstlisting}
-\end{quote}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\ChapterTitleSolutionSteps}
-\label{sec:odtworzenie}
-
-W tym rozdziale opisany jest proces odtworzenia całego rozwiązania krok po kroku, z wykorzystaniem podejścia Infrastructure as Code (IaC). Podejście to znacząco ułatwia proces wdrażania infrastruktury, poprzez jego automatyzację i ogranicza się do wykonania kilku komend, które, na podstawie zdefiniowanych plików konfiguracyjnych, wykonają niezbędną pracę za nas.
-
-\section{Infrastructure as Code (IaC) - Podejście}
-
-Infrastructure as Code (IaC) to praktyka zarządzania infrastrukturą IT przy użyciu kodu, co pozwala na automatyzację procesów wdrożeniowych oraz łatwe zarządzanie środowiskiem. W naszym projekcie wykorzystujemy Kubernetes do zarządzania kontenerami oraz Docker do budowy obrazów kontenerów. W celu zapewnienia infrastruktury dla naszego rozwiązania skorzystaliśmy z lokalnego klastra Minikube, w związku z czym nie było potrzeby korzystać z narzędzi typu Terraform.
-
-\section{Kroki odtworzenia rozwiązania}
-
-\begin{enumerate}
-    \item \textbf{Instalacja narzędzi}:
-    Na wstępie należy zainstalować niezbędne narzędzia, takie jak Docker, Minikube oraz kubectl zgodnie z instrukcjami podanymi w rozdziale dotyczącym instalacji, a także pobrać repozytorium i uruchomić konfigurację projektu. Dokładniej opisane jest to w rozdziale \ref{sec:instalacja}.
-
-    \item \textbf{Dostęp do aplikacji webowej}:
-    Po poprawnym uruchomieniu wszystkich usług, aplikacja webowa powinna być dostępna. Minikube dostarcza polecenie, które pozwala na dostęp do usług zewnętrznych poprzez otwarcie odpowiednich portów:
-\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-minikube service webapp\end{lstlisting}\vspace{-20pt}
-Następnie powinien otworzyć się tunel między klastrem Minikube a naszym lokalnym hostem i serwis aplikacji webowej powinien być dostępny lokalnie pod wyszczególnionym portem:
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.9\linewidth]{resources/webapp expose.PNG}
-    \caption{Otworzenie tunelu między Minikube a naszym hostem}
-    \label{fig:tunel}
-\end{figure}
 \newpage
-    \item \textbf{Zmiana liczebności skalowalnych serwisów}:
-    Każdy serwis eCSB, który dzięki zastosowaniu shardingu jest możliwy do skalowania, możemy kontrolować za pomocą deklaracji Deploymentów. Dla przykładu możemy zwiększyć liczbę podów serwisu moving zmieniając parametr ilości replik:
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.6\linewidth]{resources/moving_replicas.PNG}
-    \caption{Zmiana liczby podów serwisu moving}
-    \label{fig:scaling}
-\end{figure} 
-    \item \textbf{Dostosowywanie się middleware do obciążenia}:
-     Użycie Operator Framework do kontroli Postgresa umożliwia tworzenie replik jego instancji w miarę zwiększania się ilości serwisów (pojedyncza instancja Postgres ma ograniczoną liczbę dozwolonych połączeń):
-    TODO
-\end{enumerate}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\ChapterTitleDemoDeployment}
-\label{sec:deployment}
+\section{Operator Framework dla middleware}
 Mając środowisko minikube i aplikację w Kubernetes, dla odpowiednich serwisów (PostgreSQL, Redis, RabbitMQ) wprowadzeni zostali operatorzy utworzeni przy użyciu Operator Framework bazującym na Go.
 
 \begin{enumerate}
     \item \textbf{Utworzenie repozytorium Operatora}: \verb|operator-sdk| automatycznie generuje projekt z bazowymi plikami do modyfikacji
     \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
- $ operator-sdk init\end{lstlisting}
-\vspace{-20pt}
+$ operator-sdk init\end{lstlisting}\vspace{-30pt}
    \item \textbf{Stworzenie API oraz kontrolera}:
    również jest generowany bazowy kod dla resource API oraz kontrolera, np. dla PostgreSQL są to - \verb|postgres_types.go| oraz \verb|postgres_controller.go|, które następnie są dostosowywane do pożądanej funkcjonalności.
    \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-$ operator-sdk create api \
-    --version=v1 \\end{lstlisting}
-
-%     \begin{lstlisting}[caption=fragment kontrolera dla PostgreSQL]
-% type Postgres struct {
-% 	metav1.TypeMeta   `json:",inline"`
-% 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-% 	Spec   PostgresSpec   `json:"spec,omitempty"`
-% 	Status PostgresStatus `json:"status,omitempty"`
-% }
-%     \end{lstlisting}
+$ operator-sdk create api --version=v1 \end{lstlisting}\vspace{-30pt}
     
-   Controller (kontroler) jest częścią Kubernetesa gdzie znajduje się logika Operatora. Za każdym razem gdy pojawia się jakaś zmiana na obserwowanym zasobie, funkcja \verb|Reconcile| ma doprowadzić aby aktualny stan CR (CustomResource) odpowiadał pożądanemu stanowi systemu. Dodatkowo, dzięki funkcji \verb|SetupWithManager()| zarządzamy zasobami pod kontrolerem oraz konfiguracjami.
+   Controller (kontroler) jest częścią Kubernetesa gdzie znajduje się logika Operatora. Za każdym razem gdy pojawia się jakaś zmiana na obserwowanym zasobie, funkcja \verb|Reconcile| ma doprowadzić, aby aktualny stan CR (CustomResource) odpowiadał pożądanemu stanowi systemu. Dodatkowo, dzięki funkcji \verb|SetupWithManager()| zarządzamy zasobami pod kontrolerem oraz konfiguracjami.
 
     \begin{figure}[H]
         \centering
         \includegraphics[width=0.75\linewidth]{image.png}
         \caption{Schemat działania kontrolera\cite{hausenblas2019programming}}
-        \label{fig:enter-label}
+        \label{fig:controler}
     \end{figure}
    
     \begin{lstlisting}[caption=fragment kontrolera dla PostgreSQL]
@@ -557,11 +527,11 @@ $ operator-sdk create api \
     }
 \end{lstlisting}
 
+\newpage
 
-\item \textbf{Utworzenie CRD}: wygenerowanie CustomResourceDefinition, który Operator ma obserwować oraz nim zarządzać
+\item \textbf{Utworzenie CRD}: wygenerowanie CustomResourceDefinition, który Operator ma obserwować oraz nim zarządzać.
 \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-$ make manifests\end{lstlisting}
-% \end{enumerate}
+$ make manifests\end{lstlisting}\vspace{-20pt}
 
 \begin{lstlisting}[caption=Fragment CRD dla PostgreSQL]
 ---
@@ -596,93 +566,161 @@ spec:
 
 \item \textbf{Uruchomienie Operatora}: lokalnie, przy podłączeniu do klastra Kubernetes
 \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
-$ make install run\end{lstlisting}
-% \end{enumerate}
-
-    
+$ make install run\end{lstlisting}\vspace{-20pt}
 \end{enumerate}
 
 Po utworzeniu odpowiednich Operatorów oraz ich wdrożeniu na klastrze minikube można obserwować ich działanie dla naszego scenariusza \ref{scenario}.
+\newpage
+\section{Napotkane problemy}
+\par Jednymi z najistotniejszych elementów konfiguracji poza zwykłym zdefiniowaniem plików YAMLowych okazały się:
+\begin{itemize}
+    \item \textbf{wystawienie aplikacji na zewnątrz klastra Kubernetesowego} — okazało się, że zastosowanie komponentu Ingress zarówno dla modułów backendowych jak i aplikacji frontendowej było błędem (opcja rewrite-target uniemożliwiała poprawny odbiór plików aplikacji webapp).
+    \item \textbf{dostęp do klastra Minikube} - klaster Minikube uruchomiony jako kontener na Docker Desktop skutkował jego niedostępnością z lokalnego hosta. Z tego względu zmieniliśmy środowisko na Kubernetesa zapewnianego przez Docker Desktop, który wszystkie seriwsy typu NodePort wystawia na localhost.
+    \item \textbf{skrypty bazodanowe} — Postgres oprócz tworzenia i obsługi instancji wymagał dostępu do skryptów bazodanowych, które tworzyły wszystkie potrzebne tabele. Oprócz zamontowania wolumenów w klastrze Minikube potrzebne było również przekopiowanie samych skryptów do środka klastra, aby pody mogły z nich korzystać przy inicjalizacji. Niestety okazało się, że ten sposób przekazania skryptów nie może być zautomatyzowany, stąd skorzystaliśmy z przekształcenia skryptów do ConfigMap i przekazania ich jako parametry startowe podów Postgresa.
+    \item \textbf{dane Postgresa i Redisa} — persystencja na lokalnym klastrze nie jest najlepszym rozwiązaniem (jeśli Minikube odmówi posłuszeństwa, dane przepadną), niemniej pojedyncze pody bywają jeszcze bardziej zawodne. Zamontowanie wolumenów zarówno dla danych statycznych (Postgres) jak i dynamicznych (Redis) było oczywistością.
+    \item \textbf{konfiguracja RabbitMQ} — okazało się, że przekazanie plików konfiguracyjnych poprzez zamontowanie ConfigMap spowodowało błędy poda (oczywiście nigdzie nielogowane), które uniemożliwiały podłączenie się serwisów. Konieczne stało się w tym przypadku zastosowanie Operator Framework, aby inicjalizować pody RabbitMQ z odpowiednimi pluginami.
+    \item \textbf{zasoby potrzebne do stworzenia gry} — jeden z modułów Chłopskiej Szkoły Biznesu wymagał zapisywania oraz odczytywania plików .jpg, będących elementami mapy lub grafikami postaci. Również w tym przypadku konieczne było zastosowanie persystentnego wolumenu wewnątrz klastra.
+    
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{\ChapterTitleInstallMethod} \label{sec:instalacja}
+
+\section{Podejście z Docker Desktop}
 
 
-...
+\begin{enumerate}
+\item Należy przejść na stronę \href{https://www.docker.com/products/docker-desktop}{Docker Desktop} i pobrać odpowiednią wersję dla systemu operacyjnego (Windows, macOS, Linux).
+\item Następnie należy postępować zgodnie z opisanymi krokami instalacji dla używanego systemu operacyjnego.
+\item Po uruchomieniu przechodzimy do ustawień i włączamy Kubernetesa:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{resources/dockerDesktop.PNG}
+    \caption{Włączenie klastra Kubernetes w Docker Desktop}
+    \label{fig:enter-label}
+\end{figure}
+\item Odczekujemy, aż klaster pobierze wszystkie potrzebne obrazy oraz uruchomi wewnętrzne serwisy Kubernetesa i instalujemy kontroler Ingress w klastrze:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/
+ingress-nginx/controller-v1.10.1/deploy/static/
+provider/cloud/deploy.yaml\end{lstlisting}\vspace{-20pt}
+
+\end{enumerate}
+
+\section{Podejście z Minikube (najlepiej Linux/MacOS)}
+
+\begin{enumerate}
+\item Instalujemy wybrany menedżer kontenerów taki jak Docker, Hyper-V lub VirtualBox.
+\item Należy przejść na stronę \href{https://minikube.sigs.k8s.io/docs/start/}{Minikube} i pobrać odpowiednią wersję dla systemu operacyjnego, a następnie postępować zgodnie z krokami instalacji opisanymi w na załączonej stronie internetowej.
+\item Uruchomiamy Minikube:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube start\end{lstlisting}\vspace{-20pt}
+\item Włączamy plugin odpowiedzialny za kontrolę Ingress:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube addons enable ingress
+\end{lstlisting}\vspace{-20pt}
+\item Weryfikujemy, czy nasz system poprawnie wyszukuje klaster Minikube poprzez wykonanie następującej komendy:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+ssh docker@$(minikube ip)
+\end{lstlisting}\vspace{-20pt}
+Jeśli komenda zakończy się nieznalezieniem hosta, oznacza to, że klaster Minikube jest niewidoczny, w związku z czym wystawiona aplikacja frontendowa nie będzie mogła wykonać żądań do modułów backendowych. W tym przypadku należy zastosować podejście z Docker Desktop.
+\end{enumerate}
 
 
-[skriny scenariusza]
+\section{Uruchomienie aplikacji na Kubernetes}
+
+\begin{enumerate}
+  \item \textbf{Pobranie repozytorium z rozwiązaniem}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+ git clone git@github.com:michwoj01/EOSI-Operator-Framework.git
+ cd EOSI-Operator-Framework\end{lstlisting}\vspace{-20pt}
+  \item \textbf{Zastosowanie wszystkich plików konfiguracyjnych Kubernetes oraz Custom Resource Definition}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+ cd kubernetes && ./deploy.sh\end{lstlisting}\vspace{-20pt}
+  Jeżeli napotkano błąd \texttt{error looking up service account default/default: serviceaccount "default" not found}, należy ponownie uruchomić powyższą komendę.
+  \item \textbf{Dodanie wpisu do /etc/hosts} Do pliku /etc/hosts dodajemy wpis:
+    \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+127.0.0.1 ecsb.agh.edu.pl\end{lstlisting}\vspace{-20pt}
+\newpage
+  \item \textbf{Sprawdzenie statusu stworzonych elementów}:
+  \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+kubectl get all\end{lstlisting}\vspace{-20pt}
+\end{enumerate}
+
+\section{Debugowanie}
+
+W przypadku problemów, sprawdzenie statusu lub logów podów, ingressa lub serwisów:
+\begin{quote}
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+kubectl describe <pod-name>
+kubectl logs <pod-name>
+kubectl get ingress backend -o wide
+kubectl get svc -o wide
+\end{lstlisting}
+\end{quote}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{\ChapterTitleSolutionSteps}
+\label{sec:odtworzenie}
+
+W tym rozdziale opisany jest proces odtworzenia całego rozwiązania krok po kroku, z wykorzystaniem podejścia Infrastructure as Code (IaC). Podejście to znacząco ułatwia proces wdrażania infrastruktury, poprzez jego automatyzację i ogranicza się do wykonania kilku komend, które, na podstawie zdefiniowanych plików konfiguracyjnych, wykonają niezbędną pracę za nas.
+
+\section{Infrastructure as Code (IaC) - Podejście}
+
+Infrastructure as Code (IaC) to praktyka zarządzania infrastrukturą IT przy użyciu kodu, co pozwala na automatyzację procesów wdrożeniowych oraz łatwe zarządzanie środowiskiem. W naszym projekcie wykorzystujemy Kubernetes do zarządzania kontenerami oraz Docker do budowy obrazów kontenerów. W celu zapewnienia infrastruktury dla naszego rozwiązania początkowo korzystaliśmy z lokalnego klastra Minikube, a następnie z Kubernetesa zapewnianego przez Docker Desktop w związku z czym nie było potrzeby korzystać z narzędzi typu Terraform.
+
+\section{Kroki odtworzenia rozwiązania}
+
+\begin{enumerate}
+    \item \textbf{Instalacja narzędzi}:
+    Na wstępie należy zainstalować niezbędne narzędzia, takie jak Docker Desktop lub Minikube zgodnie z instrukcjami podanymi w rozdziale dotyczącym instalacji, a także pobrać repozytorium i uruchomić konfigurację projektu. Dokładniej opisane jest to w rozdziale \ref{sec:instalacja}.
+
+    \item \textbf{Dostęp do aplikacji webowej}:
+    Po poprawnym uruchomieniu wszystkich usług, aplikacja webowa powinna być dostępna. Minikube dostarcza polecenie, które pozwala na dostęp do usług zewnętrznych poprzez otwarcie odpowiednich portów:
+\begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+minikube service webapp\end{lstlisting}\vspace{-20pt}
+Następnie powinien otworzyć się tunel między klastrem Minikube a naszym lokalnym hostem i serwis aplikacji webowej powinien być dostępny lokalnie pod wyszczególnionym portem:
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{resources/webapp expose.PNG}
+    \caption{Otworzenie tunelu między Minikube a naszym hostem}
+    \label{fig:tunel}
+\end{figure}
+\newpage
+
+Jeśli natomiast użyliśmy podejścia z Docker Desktop, to nasza aplikacja dostępna jest pod adresem \href{http://localhost:30007}.
+lokalnie pod wyszczególnionym portem:
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{resources/ecsb.PNG}
+    \caption{Aplikacja frontendowa po zalogowaniu}
+    \label{fig:ecsb}
+\end{figure}
+    \item \textbf{Zmiana liczebności skalowalnych serwisów}:
+    Każdy serwis eCSB, który dzięki zastosowaniu shardingu jest możliwy do skalowania, możemy kontrolować za pomocą deklaracji Deploymentów. Dla przykładu możemy zwiększyć liczbę podów serwisu moving zmieniając parametr ilości replik:
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.6\linewidth]{resources/moving_replicas.PNG}
+    \caption{Zmiana liczby podów serwisu moving}
+    \label{fig:scaling}
+\end{figure} 
+\newpage
+    Następnie (zakładając, że jesteśmy w folderze root naszego projektu) możemy zastosować nasze zmiany w Kubernetesie:
+    \begin{lstlisting}[basicstyle=\ttfamily, numbers=none]
+kubectl apply -f kubernetes/deployments/moving.yaml\end{lstlisting}\vspace{-20pt}
+\end{enumerate}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{\ChapterTitleSummary}
 \label{sec:podsumowanie}
 
-Operator Framework to przydatne narzędzie do orch
+Operator Framework to przydatne narzędzie do zautomatyzowanego zarządzania aplikacjami Kubernetesowymi. Pozwala m.in. na zarządzanie bazą danych w razie ewentualnej awarii systemu.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Operator Framework umożliwia zautomatyzowane zarządzanie cyklem życia tych komponentów, w tym instalację, skalowanie, konfigurację, oraz monitorowanie. Utworzeni Operatorzy zapewniają wysoką dostępność i automatyczną naprawę ewentualnych awarii.
 
-\section{Rysunki, tabele}
-\label{sec:rysunki-tabele}
+Dzięki zastosowaniu Operator Framework, nasza aplikacja była w stanie działać bardziej efektywnie i niezawodnie, a proces zarządzania środowiskiem Kubernetes stał się prostszy i mniej podatny na błędy. Projekt pokazał, że Operator Framework jest silnym narzędziem do zarządzania wielokomponentowymi aplikacjami w chmurze.
 
-\subsection{Rysunki}
-\label{sec:rysunki}
-
-Przykładowy odnośnik do rysunku~\ref{fig:ex1}.
-
-\begin{figure}[!htbp]
-  \centering
-\includegraphics[width=.7\textwidth]{resources/example.pdf}
-\caption[Przykładowy rysunek]{Przykładowy rysunek (źródło:
-  \cite{author2021title})}
-\label{fig:ex1}
-\end{figure}
- 
-W przypadku rysunków można odwoływać się zarówno do poszczególnych części
-składowych --- rysunek~\ref{fig:sub1} i rysunek~\ref{fig:sub2}) --- jak i do
-całego rysunku~\ref{fig:ex2}.
-
-\begin{figure}[!htbp]
-\begin{center}
-\subfigure[Tytuł 1]{%
-\label{fig:sub1}
-\includegraphics[width=0.48\textwidth]{resources/example.pdf}}%
-\subfigure[Tytuł 2]{%
-\label{fig:sub2}
-\includegraphics[width=0.48\textwidth]{resources/example.pdf}}
-\end{center}
-\caption[Kolejne przykładowe rysunki]{Kolejne przykładowe rysunki (źródło:
-  \cite{author2021title})}
-\label{fig:ex2}
-\end{figure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-\section{Cytowania}
-\label{sec:cytowania}
-
-Przykład cytowania literatury~\cite{wilson2009prediction-interday}. Kolejny przykład
-cytowania kilku pozycji bibliograficznych~\cite{allen1999using-genetic, zitzler1999evolutionary-algorithms, pictet1995genetic-algorithms, wilhelmstotter2021jenetics, chmaj2015DistributedProcessingApplications}.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Listy}
-\label{sec:listy}
-
-Lista z elementami:
-\begin{itemize}
-\item pierwszym,
-\item drugim,
-\item trzecim.
-\end{itemize}
-
-Lista numerowana z dłuższymi opisami:
-\begin{enumerate}
-\item Pierwszy element listy.
-\item Drugi element listy.
-\item Trzeci element listy.
-\end{enumerate}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\printbibliography
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \listoffigures
-\listoftables
-\listofalgorithmes
 \lstlistoflistings
 
 \end{document}
