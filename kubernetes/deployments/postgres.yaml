@@ -30,7 +30,7 @@ spec:
       serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-postgres-operator:v1.0.5
+          image: matipl01/ecsb-postgres-operator:v1.0.13
           ports:
             - containerPort: 5432
           args:
@@ -51,11 +51,10 @@ metadata:
     app.kubernetes.io/created-by: kubernetes-operators
     app: postgres
 spec:
-  size: 1
   image: postgres:15.3
   dbName: mydb
   dbUser: postgres
   dbPassword: postgres
-  dbPort: "5432"
+  dbPort: 5432
   dataPvcName: "postgres-data-pvc"
   initScriptsConfigMap: "postgres-init-scripts"

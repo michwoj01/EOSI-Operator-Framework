@@ -33,7 +33,7 @@ spec:
       serviceAccountName: kubernetes-operators-sa
       containers:
         - name: operator
-          image: matipl01/ecsb-redis-operator:v0.1.1
+          image: matipl01/ecsb-redis-operator:v0.1.3
           ports:
             - name: "management"
               containerPort: 8001

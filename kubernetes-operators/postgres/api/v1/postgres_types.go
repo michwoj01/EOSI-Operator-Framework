@@ -6,12 +6,12 @@ import (
 
 // PostgresSpec defines the desired state of Postgres
 type PostgresSpec struct {
-	Size                 int32  `json:"size"`
+	Replicas             *int32 `json:"replicas,omitempty"`
 	Image                string `json:"image"`
 	DbName               string `json:"dbName"`
 	DbUser               string `json:"dbUser"`
 	DbPassword           string `json:"dbPassword"`
-	DbPort               string `json:"dbPort"`
+	DbPort               int32  `json:"dbPort"`
 	DataPvcName          string `json:"dataPvcName"`
 	InitScriptsConfigMap string `json:"initScriptsConfigMap,omitempty"`
 }
